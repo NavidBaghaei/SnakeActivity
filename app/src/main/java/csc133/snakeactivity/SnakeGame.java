@@ -18,6 +18,8 @@ import java.io.IOException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
+import android.graphics.Typeface;
+import androidx.core.content.res.ResourcesCompat;
 
 class SnakeGame extends SurfaceView implements Runnable{
 
@@ -46,19 +48,22 @@ class SnakeGame extends SurfaceView implements Runnable{
     private SurfaceHolder mSurfaceHolder;
     private Paint mPaint;
 
-    // A snake ssss
+    private Paint textPaint;
+
     private Snake mSnake;
-    // And an apple
+
     private Apple mApple;
 
     private Bitmap backgroundImage;
 
+    private Point size;
 
     // This is the constructor method that gets called
     // from SnakeActivity
     public SnakeGame(Context context, Point size) {
         super(context);
-
+        this.size = size;
+        Typeface customTypeface = ResourcesCompat.getFont(context, R.font.workbench);
         // Work out how many pixels each block is
         int blockSize = size.x / NUM_BLOCKS_WIDE;
         // How many blocks of the same size will fit into the height
@@ -98,10 +103,14 @@ class SnakeGame extends SurfaceView implements Runnable{
         // Scale the background image to fit the screen
         backgroundImage = Bitmap.createScaledBitmap(backgroundImage, size.x, size.y, false);
 
+
         // Initialize the drawing objects
         mSurfaceHolder = getHolder();
         mPaint = new Paint();
-
+        mPaint.setTextSize(40); // Or whatever size you need
+        mPaint.setColor(Color.WHITE); // Just an example color
+        // Set the custom font for mPaint as well
+        mPaint.setTypeface(customTypeface);
 
 
 
@@ -116,8 +125,12 @@ class SnakeGame extends SurfaceView implements Runnable{
                         mNumBlocksHigh),
                 blockSize);
 
-
-
+        // Initialize the Paint object for text
+        textPaint = new Paint();
+        textPaint.setTextSize(40); // Set the font size
+        textPaint.setColor(Color.WHITE); // Set the text color
+        textPaint.setTextAlign(Paint.Align.RIGHT); // Align text to the right
+        textPaint.setTypeface(customTypeface);
     }
 
 
@@ -240,6 +253,13 @@ class SnakeGame extends SurfaceView implements Runnable{
             // Draw the apple and the snake
             mApple.draw(mCanvas, mPaint);
             mSnake.draw(mCanvas, mPaint);
+
+            // Draw names in the top right corner
+            String names = "Arjun Bhargava & Navid Baghaei";
+            // Calculate the position
+            int x = size.x - 20; // Assuming 'size' is your screen size. Adjust 20 as needed for the margin
+            int y = (int) (textPaint.getTextSize() + 20); // Add some margin to the y-coordinate as well
+            mCanvas.drawText(names, x, y, textPaint);
 
             // Draw some text while paused
             if(mPaused){
