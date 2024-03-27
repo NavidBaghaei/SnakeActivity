@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.view.Display;
+import android.view.View;
 
 public class SnakeActivity extends Activity {
 
@@ -14,6 +15,13 @@ public class SnakeActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Hide the status bar and navigation bar in fullscreen mode
+        getWindow().getDecorView().setSystemUiVisibility(
+                         View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        );
 
         // Get the pixel dimensions of the screen
         Display display = getWindowManager().getDefaultDisplay();

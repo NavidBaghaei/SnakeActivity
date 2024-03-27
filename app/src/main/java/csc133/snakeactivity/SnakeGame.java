@@ -15,6 +15,9 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import java.io.IOException;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Log;
 
 class SnakeGame extends SurfaceView implements Runnable{
 
@@ -47,6 +50,8 @@ class SnakeGame extends SurfaceView implements Runnable{
     private Snake mSnake;
     // And an apple
     private Apple mApple;
+
+    private Bitmap backgroundImage;
 
 
     // This is the constructor method that gets called
@@ -87,10 +92,18 @@ class SnakeGame extends SurfaceView implements Runnable{
         } catch (IOException e) {
             // Error
         }
+        // Load the background image from drawable resources
+        backgroundImage = BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1);
+        Log.d("SnakeGame", "Background image loaded: " + (backgroundImage != null));
+        // Scale the background image to fit the screen
+        backgroundImage = Bitmap.createScaledBitmap(backgroundImage, size.x, size.y, false);
 
         // Initialize the drawing objects
         mSurfaceHolder = getHolder();
         mPaint = new Paint();
+
+
+
 
         // Call the constructors of our two game objects
         mApple = new Apple(context,
@@ -102,6 +115,8 @@ class SnakeGame extends SurfaceView implements Runnable{
                 new Point(NUM_BLOCKS_WIDE,
                         mNumBlocksHigh),
                 blockSize);
+
+
 
     }
 
@@ -195,13 +210,25 @@ class SnakeGame extends SurfaceView implements Runnable{
 
 
     // Do all the drawing
+
     public void draw() {
         // Get a lock on the mCanvas
         if (mSurfaceHolder.getSurface().isValid()) {
             mCanvas = mSurfaceHolder.lockCanvas();
 
             // Fill the screen with a color
-            mCanvas.drawColor(Color.argb(255, 26, 128, 182));
+            mCanvas.drawColor(Color.argb(255, 8, 143, 143));
+
+            if (backgroundImage != null) {
+                mCanvas.drawBitmap(backgroundImage, 0, 0, null);
+            }
+
+            // This makes the grid more visible on complex backgrounds
+            mPaint.setColor(Color.argb(50, 0, 0, 0)); // Semi-transparent black
+            mCanvas.drawRect(0, 0, mCanvas.getWidth(), mCanvas.getHeight(), mPaint);
+
+            // Draw the grid
+            drawGrid(mCanvas);
 
             // Set the size and color of the mPaint for the text
             mPaint.setColor(Color.argb(255, 255, 255, 255));
@@ -234,6 +261,28 @@ class SnakeGame extends SurfaceView implements Runnable{
             mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
     }
+
+    private void drawGrid(Canvas canvas) {
+        int gridSize = 20; //  determines the size of your grid
+        float colWidth = canvas.getWidth() / (float) gridSize;
+        float rowHeight = canvas.getHeight() / (float) gridSize;
+
+        // Set grid line color and stroke width
+        Paint paint = new Paint();
+        paint.setColor(Color.argb(255, 60, 60, 160)); // Dark gray color for the grid lines
+        paint.setStrokeWidth(0.5f); // Thin lines for the grid
+
+        // Draw vertical grid lines
+        for (int col = 0; col <= gridSize; col++) {
+            canvas.drawLine(col * colWidth, 0, col * colWidth, canvas.getHeight(), paint);
+        }
+
+        // Draw horizontal grid lines
+        for (int row = 0; row <= gridSize; row++) {
+            canvas.drawLine(0, row * rowHeight, canvas.getWidth(), row * rowHeight, paint);
+        }
+    }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {

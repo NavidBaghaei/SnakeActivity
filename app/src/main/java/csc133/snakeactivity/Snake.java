@@ -22,7 +22,7 @@ class Snake {
     // How big is the entire grid
     private Point mMoveRange;
 
-    // Where is the centre of the screen
+    // Where is the center of the screen
     // horizontally in pixels?
     private int halfWayPoint;
 
@@ -164,6 +164,23 @@ class Snake {
 
     }
 
+        // Overload move method
+        void move(boolean speedBoost){
+            if(speedBoost) {
+                move();
+                move();
+            } else {
+                move();
+            }
+        }
+
+        void move(Heading newDirection){
+            if(Math.abs(newDirection.ordinal() - this.heading.ordinal()) % 2 == 1)
+            {
+                this.heading = newDirection;
+                move();
+            }
+        }
     boolean detectDeath() {
         // Has the snake died?
         boolean dead = false;
