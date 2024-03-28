@@ -27,9 +27,13 @@ class Apple implements GameObject {
 
     void spawn() {
         Random random = new Random();
-        location.x = random.nextInt(mSpawnRange.x) + 1;
-        location.y = random.nextInt(mSpawnRange.y - 1) + 1;
+        // Make sure to spawn within the grid and not on the snake's body
+        do {
+            location.x = random.nextInt(mSpawnRange.x);
+            location.y = random.nextInt(mSpawnRange.y);
+        } while (mSnake.isOccupying(location)); // Assuming a method to check if a point is occupied by the snake
     }
+
 
     Point getLocation() {
         return location;
@@ -39,6 +43,7 @@ class Apple implements GameObject {
     public void draw(Canvas canvas, Paint paint) {
         canvas.drawBitmap(mBitmapApple, location.x * mSize, location.y * mSize, paint);
     }
+
     @Override
     public void update() {
         // For Apple, update might not modify state but is required by GameObject.
