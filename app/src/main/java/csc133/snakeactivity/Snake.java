@@ -34,9 +34,13 @@ class Snake {
 
     private void initializeBitmaps(Context context, int ss) {
         mBitmapHeadRight = BitmapFactory.decodeResource(context.getResources(), R.drawable.head);
+        // Ensure all head bitmaps are scaled to the segment size
+        mBitmapHeadRight = Bitmap.createScaledBitmap(mBitmapHeadRight, ss, ss, false);
+
         mBitmapHeadLeft = getRotatedBitmap(mBitmapHeadRight, ss, 180);
         mBitmapHeadUp = getRotatedBitmap(mBitmapHeadRight, ss, 270);
         mBitmapHeadDown = getRotatedBitmap(mBitmapHeadRight, ss, 90);
+
         mBitmapBody = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.getResources(), R.drawable.body), ss, ss, false);
     }
 
