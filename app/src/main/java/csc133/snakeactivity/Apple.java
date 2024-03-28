@@ -41,8 +41,7 @@ class Apple implements GameObject {
     }
     @Override
     public void update() {
-        // For Apple, update might not modify state but is required by GameObject.
-        // This method could be used for effects like blinking or moving the apple in future enhancements.
+        //  required by GameObject.
     }
 
 }

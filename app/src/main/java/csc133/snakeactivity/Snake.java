@@ -130,7 +130,6 @@ public class Snake implements GameObject {
     @Override
     public void update() {
         move();
-        // Include additional update logic here if necessary.
     }
 
     public void move() {
