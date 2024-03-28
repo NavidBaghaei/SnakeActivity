@@ -162,7 +162,8 @@ class SnakeGame extends SurfaceView implements Runnable{
         // Setup mNextFrameTime so an update can be triggered
         mNextFrameTime = System.currentTimeMillis();
 
-        // No need to set isGameStarted or mPaused here as they are handled in onTouchEvent
+        isGameStarted = true; // Now the game has started
+        mPaused = false; // Game starts unpaused
     }
 
 
@@ -272,14 +273,14 @@ class SnakeGame extends SurfaceView implements Runnable{
             int y = (int) (textPaint.getTextSize() + 20); // Add some margin to the y-coordinate as well
             mCanvas.drawText(names, x, y, textPaint);
 
-            // Draw "Paused" when the game is paused
-            if (mPaused) {
+            // Draw "Paused" when the game is paused and has started
+            if (mPaused && isGameStarted) {
                 mPaint.setTextSize(250);
                 mCanvas.drawText("Paused", 200, 700, mPaint);
             }
 
-            // Draw "Tap to Play" when the game has not started
-            if (!isGameStarted) {
+            // Draw "Tap to Play" when the game has not started or the player has died
+            if (!isGameStarted || (!mPaused && !isGameStarted)) {
                 mPaint.setTextSize(250);
                 mCanvas.drawText(getResources().getString(R.string.tap_to_play), 200, 700, mPaint);
             }
@@ -289,6 +290,7 @@ class SnakeGame extends SurfaceView implements Runnable{
             mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
     }
+
 
 
 
