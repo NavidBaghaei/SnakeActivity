@@ -11,7 +11,7 @@ import android.view.MotionEvent;
 
 import java.util.ArrayList;
 
-class Snake {
+public class Snake implements GameObject {
 
     // The location in the grid of all the segments
     private ArrayList<Point> segmentLocations;
@@ -127,8 +127,13 @@ class Snake {
         segmentLocations.add(new Point(w / 2, h / 2));
     }
 
+    @Override
+    public void update() {
+        move();
+        // Include additional update logic here if necessary.
+    }
 
-    void move() {
+    public void move() {
 
         if (segmentLocations.isEmpty()) {
             // If there are no segments, there's nothing to move
@@ -173,7 +178,7 @@ class Snake {
 
 
     // Overloaded move method with speed boost
-    void move(boolean speedBoost) {
+    public void move(boolean speedBoost) {
         // Move the snake normally
         move();
 
@@ -182,23 +187,6 @@ class Snake {
             move();
         }
     }
-
-    public boolean checkForAppleCollision(Point appleLocation) {
-        if (segmentLocations.isEmpty()) return false;
-
-        Point head = segmentLocations.get(0); // Get the snake's head position
-
-        // Check if the head collides with the apple
-        if (head.equals(appleLocation)) {
-            // If collision is detected, add a new segment and return true
-            segmentLocations.add(new Point(-10, -10)); // Add the new segment off-screen; it will be corrected in the next move
-            return true;
-        }
-        return false;
-    }
-
-
-
 
     public void updateHeading(Heading newHeading) {
         // Check that the new heading is not directly opposite to the current heading
@@ -246,8 +234,8 @@ class Snake {
 
         return false;
     }
-
-    void draw(Canvas canvas, Paint paint) {
+    @Override
+    public void draw(Canvas canvas, Paint paint) {
 
         // Don't run this code if ArrayList has nothing in it
         if (!segmentLocations.isEmpty()) {

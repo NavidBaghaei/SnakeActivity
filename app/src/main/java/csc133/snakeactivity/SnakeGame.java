@@ -21,6 +21,7 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.graphics.Typeface;
 import androidx.core.content.res.ResourcesCompat;
+import java.util.ArrayList;
 
 class SnakeGame extends SurfaceView implements Runnable{
 
@@ -64,9 +65,8 @@ class SnakeGame extends SurfaceView implements Runnable{
 
     private boolean isGameStarted = false;
     private boolean speedBoost = false;
-    private boolean speedBoostActive = false;
-
     private int speedBoostUpdatesRemaining = 0;
+    private ArrayList<GameObject> gameObjects;
 
 
     // This is the constructor method that gets called
@@ -135,6 +135,11 @@ class SnakeGame extends SurfaceView implements Runnable{
                         mNumBlocksHigh),
                 blockSize);
 
+        // Initialize gameObjects and add game entities
+        gameObjects = new ArrayList<>();
+        gameObjects.add(mSnake); // Assume Snake implements GameObject
+        gameObjects.add(mApple); // Assume Apple implements GameObject
+
         // Initialize the Paint object for text
         textPaint = new Paint();
         textPaint.setTextSize(40); // Set the font size
@@ -176,13 +181,38 @@ class SnakeGame extends SurfaceView implements Runnable{
 
 
     // Handles the game loop
+
     @Override
     public void run() {
         while (mPlaying) {
-            if(!mPaused && updateRequired()) {
-                update();
+            if (!mPaused && updateRequired()) {
+                update(); // This method should update the game state, including moving objects
             }
-            draw();
+            draw(); // Directly call the draw method here
+        }
+    }
+
+
+    private void updateGameObjects() {
+        for (GameObject obj : gameObjects) {
+            obj.update();
+        }
+        // Additional logic for collision detection, game state updates, etc.
+    }
+
+
+    private void drawGameObjects() {
+        if (mSurfaceHolder.getSurface().isValid()) {
+            mCanvas = mSurfaceHolder.lockCanvas();
+            // Setup drawing (clear canvas, draw background, etc.)
+
+            // Draw each game object
+            for (GameObject obj : gameObjects) {
+                obj.draw(mCanvas, mPaint);
+            }
+
+            // Finalize drawing
+            mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
     }
 
@@ -212,7 +242,7 @@ class SnakeGame extends SurfaceView implements Runnable{
     }
 
 
-    // Update all the game objects
+
     // Update all the game objects
     public void update() {
         // If speed boost is active, apply it and decrement the counter
@@ -246,58 +276,63 @@ class SnakeGame extends SurfaceView implements Runnable{
 
     // Do all the drawing
     public void draw() {
-        // Get a lock on the mCanvas
+        // First, validate that we have a valid drawing surface
         if (mSurfaceHolder.getSurface().isValid()) {
+            // Lock the canvas for drawing
             mCanvas = mSurfaceHolder.lockCanvas();
 
-            // Fill the screen with a color
+            // Clear the screen with a specific color
             mCanvas.drawColor(Color.argb(255, 8, 143, 143));
 
+            // If there's a background image, draw it on the entire canvas
             if (backgroundImage != null) {
                 mCanvas.drawBitmap(backgroundImage, 0, 0, null);
             }
 
-            // This makes the grid more visible on complex backgrounds
-            mPaint.setColor(Color.argb(50, 0, 0, 0)); // Semi-transparent black
+            // Optionally, draw a semi-transparent overlay to enhance grid visibility
+            mPaint.setColor(Color.argb(50, 0, 0, 0));
             mCanvas.drawRect(0, 0, mCanvas.getWidth(), mCanvas.getHeight(), mPaint);
 
-            // Draw the grid
+            // Draw the game grid
             drawGrid(mCanvas);
 
-            // Set the size and color of the mPaint for the text
+            // Configure paint for drawing text (score, names, game status messages)
             mPaint.setColor(Color.argb(255, 255, 255, 255));
             mPaint.setTextSize(120);
 
-            // Draw the score
+            // Draw the current score
             mCanvas.drawText("" + mScore, 20, 120, mPaint);
 
-            // Draw the apple and the snake
+            // Draw game objects: apple and snake. Make sure they implement GameObject and draw themselves
             mApple.draw(mCanvas, mPaint);
             mSnake.draw(mCanvas, mPaint);
 
-            // Draw names in the top right corner
+            // Draw developer names or any other info in the top right corner
             String names = "Arjun Bhargava & Navid Baghaei";
-            int x = size.x - 20; // Assuming 'size' is your screen size. Adjust 20 as needed for the margin
-            int y = (int) (textPaint.getTextSize() + 20); // Add some margin to the y-coordinate as well
+            int x = size.x - 20; // Margin from the right edge
+            int y = (int) (textPaint.getTextSize() + 20); // Margin from the top
             mCanvas.drawText(names, x, y, textPaint);
 
-            // Draw "Paused" when the game is paused and has started
+            // Display a "Paused" message when the game is paused
             if (mPaused && isGameStarted) {
                 mPaint.setTextSize(250);
                 mCanvas.drawText("Paused", 200, 700, mPaint);
             }
 
-            // Draw "Tap to Play" when the game has not started or the player has died
+            // Show "Tap to Play" when the game has not started or after the player dies
             if (!isGameStarted || (!mPaused && !isGameStarted)) {
                 mPaint.setTextSize(250);
                 mCanvas.drawText(getResources().getString(R.string.tap_to_play), 200, 700, mPaint);
             }
 
-            drawPauseButton(mCanvas);  // Separate method to draw the pause button
+            // Draw the pause button UI
+            drawPauseButton(mCanvas);
 
+            // Finally, post the canvas to the drawing surface
             mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
     }
+
 
 
 
