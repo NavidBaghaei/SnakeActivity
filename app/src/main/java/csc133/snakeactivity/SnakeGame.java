@@ -259,6 +259,12 @@ class SnakeGame extends SurfaceView implements Runnable{
             mApple.draw(mCanvas, mPaint);
             mSnake.draw(mCanvas, mPaint);
 
+            // Draw names in the top right corner
+            String names = "Arjun Bhargava & Navid Baghaei";
+            int x = size.x - 20; // Assuming 'size' is your screen size. Adjust 20 as needed for the margin
+            int y = (int) (textPaint.getTextSize() + 20); // Add some margin to the y-coordinate as well
+            mCanvas.drawText(names, x, y, textPaint);
+
             if (mPaused) {
                 mPaint.setTextSize(250);
                 mCanvas.drawText(getResources().getString(R.string.tap_to_play), 200, 700, mPaint);
@@ -270,11 +276,16 @@ class SnakeGame extends SurfaceView implements Runnable{
         }
     }
 
-    private void drawPauseButton(Canvas canvas) {
-        mPaint.setColor(Color.WHITE);
+        private void drawPauseButton(Canvas canvas) {
+        // Set the color for the button with reduced alpha for transparency
+        mPaint.setColor(Color.argb(128, 255, 255, 255)); // Half transparent white
         mPaint.setTextSize(35);
+
+        // Draw the rectangle for the button
         canvas.drawRect(pauseButtonRect, mPaint);
-        mPaint.setColor(Color.BLACK);
+
+        // Draw the text on the button
+        mPaint.setColor(Color.BLACK); // No need to make the text transparent
         float textWidth = mPaint.measureText(pauseButtonText);
         int textX = pauseButtonRect.left + (pauseButtonRect.width() - (int) textWidth) / 2;
         int textY = pauseButtonRect.top + (pauseButtonRect.height() + 30) / 2;
