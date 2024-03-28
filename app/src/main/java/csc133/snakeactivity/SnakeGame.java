@@ -63,6 +63,11 @@ class SnakeGame extends SurfaceView implements Runnable{
     private String pauseButtonText = "Pause";
 
     private boolean isGameStarted = false;
+    private boolean speedBoost = false;
+    private boolean speedBoostActive = false;
+
+    private int speedBoostUpdatesRemaining = 0;
+
 
     // This is the constructor method that gets called
     // from SnakeActivity
@@ -165,6 +170,8 @@ class SnakeGame extends SurfaceView implements Runnable{
 
         isGameStarted = true; // Now the game has started
         mPaused = false; // Game starts unpaused
+
+        speedBoost = false;
     }
 
 
@@ -206,36 +213,36 @@ class SnakeGame extends SurfaceView implements Runnable{
 
 
     // Update all the game objects
+    // Update all the game objects
     public void update() {
+        // If speed boost is active, apply it and decrement the counter
+        mSnake.move(speedBoostUpdatesRemaining > 0);
 
-        // Move the snake
-        mSnake.move();
+        // Decrease the number of updates remaining for the speed boost
+        if (speedBoostUpdatesRemaining > 0) {
+            speedBoostUpdatesRemaining--;
+        }
 
-        // Did the head of the snake eat the apple?
+        // Rest of the update logic...
+        // Check for apple collision to activate the speed boost
         if(mSnake.checkDinner(mApple.getLocation())){
-            // This reminds me of Edge of Tomorrow.
-            // One day the apple will be ready!
             mApple.spawn();
-
-            // Add to  mScore
-            mScore = mScore + 1;
-
-            // Play a sound
+            mScore += 1;
+            speedBoostUpdatesRemaining = 20; // Reset to 2 seconds worth of updates
             mSP.play(mEat_ID, 1, 1, 0, 0, 1);
         }
 
-        // Did the snake die?
+        // Check if the snake has died
         if (mSnake.detectDeath()) {
-            // Play the sound for death
+            // Play the death sound and pause the game
             mSP.play(mCrashID, 1, 1, 0, 0, 1);
-            mPaused = true; // Pause the game
-            isGameStarted = false; // Set game as not started
-            // You could potentially set a flag here to indicate the game over state
+            // Reset the speed boost so it doesn't carry over
+            speedBoostUpdatesRemaining = 0;
+            mPaused = true;
+            isGameStarted = false;
         }
     }
 
-
-    // Do all the drawing
 
     // Do all the drawing
     public void draw() {
