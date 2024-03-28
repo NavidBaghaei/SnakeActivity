@@ -225,12 +225,12 @@ class SnakeGame extends SurfaceView implements Runnable{
 
         // Did the snake die?
         if (mSnake.detectDeath()) {
-            // Pause the game ready to start again
+            // Play the sound for death
             mSP.play(mCrashID, 1, 1, 0, 0, 1);
-
-            mPaused =true;
+            mPaused = true; // Pause the game
+            isGameStarted = false; // Set game as not started
+            // You could potentially set a flag here to indicate the game over state
         }
-
     }
 
 
