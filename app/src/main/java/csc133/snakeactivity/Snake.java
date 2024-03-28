@@ -27,7 +27,7 @@ class Snake {
     private int halfWayPoint;
 
     // For tracking movement Heading
-    private enum Heading {
+    public enum Heading {
         UP, RIGHT, DOWN, LEFT
     }
 
@@ -313,4 +313,12 @@ class Snake {
             }
         }
     }
+    public void updateHeading(Heading newHeading) {
+        // Prevent the snake from reversing onto itself
+        if (Math.abs(newHeading.ordinal() - this.heading.ordinal()) % 2 == 1) {
+            this.heading = newHeading;
+        }
+    }
+
+
 }
