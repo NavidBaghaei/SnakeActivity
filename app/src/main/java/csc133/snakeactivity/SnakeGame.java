@@ -241,6 +241,7 @@ class SnakeGame extends SurfaceView implements Runnable{
 
     // Do all the drawing
 
+    // Do all the drawing
     public void draw() {
         // Get a lock on the mCanvas
         if (mSurfaceHolder.getSurface().isValid()) {
@@ -273,43 +274,31 @@ class SnakeGame extends SurfaceView implements Runnable{
 
             // Draw names in the top right corner
             String names = "Arjun Bhargava & Navid Baghaei";
-            // Calculate the position
             int x = size.x - 20; // Assuming 'size' is your screen size. Adjust 20 as needed for the margin
             int y = (int) (textPaint.getTextSize() + 20); // Add some margin to the y-coordinate as well
             mCanvas.drawText(names, x, y, textPaint);
 
             // Draw some text while paused
-            if(mPaused){
-
-                // Set the size and color of the mPaint for the text
-                mPaint.setColor(Color.argb(255, 255, 255, 255));
+            if(mPaused && isGameStarted) {
                 mPaint.setTextSize(250);
-
-                // Draw the message
-                // We will give this an international upgrade soon
-                //mCanvas.drawText("Tap To Play!", 200, 700, mPaint);
-                mCanvas.drawText(getResources().
-                                getString(R.string.tap_to_play),
-                        200, 700, mPaint);
+                mCanvas.drawText(getResources().getString(R.string.tap_to_play), 200, 700, mPaint);
             }
 
+            // Draw the pause button
+            mPaint.setColor(Color.WHITE);
+            mPaint.setTextSize(35);
+            mCanvas.drawRect(pauseButtonRect, mPaint);
+            mPaint.setColor(Color.BLACK);
+            float textWidth = mPaint.measureText(pauseButtonText);
+            x = pauseButtonRect.left + (pauseButtonRect.width() - (int) textWidth) / 2;
+            y = pauseButtonRect.top + (pauseButtonRect.height() + 30) / 2; // Adjust the 30 as needed
+            mCanvas.drawText(pauseButtonText, x, y, mPaint);
 
             // Unlock the mCanvas and reveal the graphics for this frame
             mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
-
-        mPaint.setColor(Color.WHITE);
-        mPaint.setTextSize(35);
-        // Draw the button as a rectangle
-        mCanvas.drawRect(pauseButtonRect, mPaint);
-        // Change the color for the text
-        mPaint.setColor(Color.BLACK);
-        // Draw the text on the button
-        float textWidth = mPaint.measureText(pauseButtonText);
-        int x = pauseButtonRect.left + (pauseButtonRect.width() - (int) textWidth) / 2;
-        int y = pauseButtonRect.top + (pauseButtonRect.height() + 30) / 2; // Adjust the 30 as needed
-        mCanvas.drawText(pauseButtonText, x, y, mPaint);
     }
+
 
     private void drawGrid(Canvas canvas) {
         int gridSize = 20; //  determines the size of your grid
