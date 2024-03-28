@@ -278,19 +278,26 @@ class SnakeGame extends SurfaceView implements Runnable{
                 mCanvas.drawText(getResources().getString(R.string.tap_to_play), 200, 700, mPaint);
             }
 
-            // Draw the pause button
-            mPaint.setColor(Color.WHITE);
-            mPaint.setTextSize(35);
-            mCanvas.drawRect(pauseButtonRect, mPaint);
-            mPaint.setColor(Color.BLACK);
-            float textWidth = mPaint.measureText(pauseButtonText);
-            x = pauseButtonRect.left + (pauseButtonRect.width() - (int) textWidth) / 2;
-            y = pauseButtonRect.top + (pauseButtonRect.height() + 30) / 2; // Adjust the 30 as needed
-            mCanvas.drawText(pauseButtonText, x, y, mPaint);
+            drawPauseButton(mCanvas);  // Separate method to draw the pause button
 
-            // Unlock the mCanvas and reveal the graphics for this frame
             mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
+    }
+
+    private void drawPauseButton(Canvas canvas) {
+        // Set the color for the button with reduced alpha for transparency
+        mPaint.setColor(Color.argb(128, 255, 255, 255)); // Half transparent white
+        mPaint.setTextSize(35);
+
+        // Draw the rectangle for the button
+        canvas.drawRect(pauseButtonRect, mPaint);
+
+        // Draw the text on the button
+        mPaint.setColor(Color.BLACK); // No need to make the text transparent
+        float textWidth = mPaint.measureText(pauseButtonText);
+        int textX = pauseButtonRect.left + (pauseButtonRect.width() - (int) textWidth) / 2;
+        int textY = pauseButtonRect.top + (pauseButtonRect.height() + 30) / 2;
+        canvas.drawText(pauseButtonText, textX, textY, mPaint);
     }
 
 
