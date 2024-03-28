@@ -118,13 +118,12 @@ class SnakeGame extends SurfaceView implements Runnable{
         // Initialize the drawing objects
         mSurfaceHolder = getHolder();
         mPaint = new Paint();
-        mPaint.setTextSize(40); // Or whatever size you need
-        mPaint.setColor(Color.WHITE); // Just an example color
-        // Set the custom font for mPaint as well
+        mPaint.setTextSize(40);
+        mPaint.setColor(Color.WHITE);
         mPaint.setTypeface(customTypeface);
 
 
-        // Call the constructors of our two game objects
+        // Call the constructors of the two game objects
         mApple = new Apple(context,
                 new Point(NUM_BLOCKS_WIDE,
                         mNumBlocksHigh),
@@ -137,8 +136,8 @@ class SnakeGame extends SurfaceView implements Runnable{
 
         // Initialize gameObjects and add game entities
         gameObjects = new ArrayList<>();
-        gameObjects.add(mSnake); // Assume Snake implements GameObject
-        gameObjects.add(mApple); // Assume Apple implements GameObject
+        gameObjects.add(mSnake);
+        gameObjects.add(mApple);
 
         // Initialize the Paint object for text
         textPaint = new Paint();
@@ -188,7 +187,7 @@ class SnakeGame extends SurfaceView implements Runnable{
             if (!mPaused && updateRequired()) {
                 update(); // This method should update the game state, including moving objects
             }
-            draw(); // Directly call the draw method here
+            draw();
         }
     }
 
@@ -197,14 +196,12 @@ class SnakeGame extends SurfaceView implements Runnable{
         for (GameObject obj : gameObjects) {
             obj.update();
         }
-        // Additional logic for collision detection, game state updates, etc.
     }
 
 
     private void drawGameObjects() {
         if (mSurfaceHolder.getSurface().isValid()) {
             mCanvas = mSurfaceHolder.lockCanvas();
-            // Setup drawing (clear canvas, draw background, etc.)
 
             // Draw each game object
             for (GameObject obj : gameObjects) {
