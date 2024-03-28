@@ -5,7 +5,6 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.view.Display;
 import android.view.View;
-import android.view.KeyEvent;
 
 public class SnakeActivity extends Activity {
 
@@ -51,25 +50,4 @@ public class SnakeActivity extends Activity {
         super.onPause();
         mSnakeGame.pause();
     }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_DPAD_UP:
-                mSnakeGame.getSnake().updateHeading(Snake.Heading.UP);
-                return true;
-            case KeyEvent.KEYCODE_DPAD_DOWN:
-                mSnakeGame.getSnake().updateHeading(Snake.Heading.DOWN);
-                return true;
-            case KeyEvent.KEYCODE_DPAD_LEFT:
-                mSnakeGame.getSnake().updateHeading(Snake.Heading.LEFT);
-                return true;
-            case KeyEvent.KEYCODE_DPAD_RIGHT:
-                mSnakeGame.getSnake().updateHeading(Snake.Heading.RIGHT);
-                return true;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
-
-
 }

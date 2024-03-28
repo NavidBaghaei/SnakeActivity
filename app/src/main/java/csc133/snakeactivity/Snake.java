@@ -27,7 +27,7 @@ class Snake {
     private int halfWayPoint;
 
     // For tracking movement Heading
-    public enum Heading {
+    private enum Heading {
         UP, RIGHT, DOWN, LEFT
     }
 
@@ -128,6 +128,12 @@ class Snake {
 
 
     void move() {
+
+        if (segmentLocations.isEmpty()) {
+            // If there are no segments, there's nothing to move
+            return;
+        }
+
         // Move the body
         // Start at the back and move it
         // to the position of the segment in front of it
@@ -206,19 +212,20 @@ class Snake {
         return dead;
     }
 
-    boolean checkDinner(Point l) {
-        //if (snakeXs[0] == l.x && snakeYs[0] == l.y) {
-        if (segmentLocations.get(0).x == l.x &&
-                segmentLocations.get(0).y == l.y) {
+    boolean checkDinner(Point appleLocation) {
+        if (segmentLocations.isEmpty()) {
+            // The snake has no segments, so it can't "eat" the apple
+            return false;
+        }
 
-            // Add a new Point to the list
-            // located off-screen.
-            // This is OK because on the next call to
-            // move it will take the position of
-            // the segment in front of it
+        // Check if the head of the snake is at the same position as the apple
+        Point head = segmentLocations.get(0);
+        if (head.equals(appleLocation)) {
+            // Add a new segment to the snake at an off-screen location (it will be moved into position on the next update)
             segmentLocations.add(new Point(-10, -10));
             return true;
         }
+
         return false;
     }
 
@@ -313,12 +320,4 @@ class Snake {
             }
         }
     }
-    public void updateHeading(Heading newHeading) {
-        // Prevent the snake from reversing onto itself
-        if (Math.abs(newHeading.ordinal() - this.heading.ordinal()) % 2 == 1) {
-            this.heading = newHeading;
-        }
-    }
-
-
 }
