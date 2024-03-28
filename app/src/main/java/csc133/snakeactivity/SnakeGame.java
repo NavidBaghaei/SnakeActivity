@@ -197,21 +197,20 @@ class SnakeGame extends SurfaceView implements Runnable{
         // First, update each game object. This could involve moving the snake,
         // checking for apple consumption, and more.
         for (GameObject obj : gameObjects) {
-            obj.update();
+            // If the object is a Snake and a speed boost is active, move it faster
+            if (obj instanceof Snake && speedBoostUpdatesRemaining > 0) {
+                ((Snake)obj).move(true); // Speed boost active
+            } else {
+                obj.update(); // Normal update
+            }
         }
 
-        // Handle the snake's speed boost logic
+        // Decrease the number of updates remaining for the speed boost
         if (speedBoostUpdatesRemaining > 0) {
             speedBoostUpdatesRemaining--;
-            // If the speed boost is active, we may need to ensure the snake moves faster,
-            // or handle this logic within the snake's own update method based on a flag.
         }
 
         // Check for collisions between the snake and the apple
-        // This assumes mSnake and mApple are accessible here. If they're part of your
-        // gameObjects collection, you'd need a way to reference them specifically.
-        // For a more general approach, consider adding collision detection as part of the
-        // GameObject interface or handling it within each object's update method.
         if (mSnake.checkDinner(mApple.getLocation())) {
             mApple.spawn(); // Respawn the apple
             mScore += 1; // Increase score
@@ -230,6 +229,7 @@ class SnakeGame extends SurfaceView implements Runnable{
         // Any other shared game logic that affects the game state globally rather than
         // being specific to any single object should be handled here.
     }
+
 
 
     // Check to see if it is time for an update
@@ -256,8 +256,7 @@ class SnakeGame extends SurfaceView implements Runnable{
         return false;
     }
 
-
-
+    
     // Update all the game objects
 
     private void drawGameObjects() {

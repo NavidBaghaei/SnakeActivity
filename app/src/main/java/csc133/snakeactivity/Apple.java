@@ -27,11 +27,8 @@ class Apple implements GameObject {
 
     void spawn() {
         Random random = new Random();
-        // Make sure to spawn within the grid and not on the snake's body
-        do {
-            location.x = random.nextInt(mSpawnRange.x);
-            location.y = random.nextInt(mSpawnRange.y);
-        } while (mSnake.isOccupying(location)); // Assuming a method to check if a point is occupied by the snake
+        location.x = random.nextInt(mSpawnRange.x) + 1;
+        location.y = random.nextInt(mSpawnRange.y - 1) + 1;
     }
 
 
