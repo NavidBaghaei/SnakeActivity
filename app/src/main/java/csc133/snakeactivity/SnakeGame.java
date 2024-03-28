@@ -272,8 +272,14 @@ class SnakeGame extends SurfaceView implements Runnable{
             int y = (int) (textPaint.getTextSize() + 20); // Add some margin to the y-coordinate as well
             mCanvas.drawText(names, x, y, textPaint);
 
-            // Draw "Tap to Play" when the game is paused or not yet started
-            if (mPaused || !isGameStarted) {
+            // Draw "Paused" when the game is paused
+            if (mPaused) {
+                mPaint.setTextSize(250);
+                mCanvas.drawText("Paused", 200, 700, mPaint);
+            }
+
+            // Draw "Tap to Play" when the game has not started
+            if (!isGameStarted) {
                 mPaint.setTextSize(250);
                 mCanvas.drawText(getResources().getString(R.string.tap_to_play), 200, 700, mPaint);
             }
@@ -283,6 +289,7 @@ class SnakeGame extends SurfaceView implements Runnable{
             mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
     }
+
 
 
     private void drawPauseButton(Canvas canvas) {
