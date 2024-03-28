@@ -44,6 +44,7 @@ class Snake {
     private Bitmap mBitmapBody;
 
 
+
     Snake(Context context, Point mr, int ss) {
 
         // Initialize our ArrayList
@@ -170,15 +171,34 @@ class Snake {
 
     }
 
-        // Overload move method
-        void move(boolean speedBoost){
-            if(speedBoost) {
-                move();
-                move();
-            } else {
-                move();
-            }
+
+    // Overloaded move method with speed boost
+    void move(boolean speedBoost) {
+        // Move the snake normally
+        move();
+
+        // If speed boost is active, move a second time
+        if (speedBoost) {
+            move();
         }
+    }
+
+    public boolean checkForAppleCollision(Point appleLocation) {
+        if (segmentLocations.isEmpty()) return false;
+
+        Point head = segmentLocations.get(0); // Get the snake's head position
+
+        // Check if the head collides with the apple
+        if (head.equals(appleLocation)) {
+            // If collision is detected, add a new segment and return true
+            segmentLocations.add(new Point(-10, -10)); // Add the new segment off-screen; it will be corrected in the next move
+            return true;
+        }
+        return false;
+    }
+
+
+
 
     public void updateHeading(Heading newHeading) {
         // Check that the new heading is not directly opposite to the current heading
@@ -188,40 +208,27 @@ class Snake {
         }
     }
 
-
-    void move(Heading newDirection){
-            if(Math.abs(newDirection.ordinal() - this.heading.ordinal()) % 2 == 1)
-            {
-                this.heading = newDirection;
-                move();
-            }
-
-
-        }
     boolean detectDeath() {
-        // Has the snake died?
-        boolean dead = false;
+        // Simplify the detection logic by calling the specific methods
+        return detectWallCollision() || detectTailCollision();
+    }
 
-        // Hit any of the screen edges
-        if (segmentLocations.get(0).x == -1 ||
-                segmentLocations.get(0).x > mMoveRange.x ||
-                segmentLocations.get(0).y == -1 ||
-                segmentLocations.get(0).y > mMoveRange.y) {
+    boolean detectWallCollision() {
+        Point head = segmentLocations.get(0);
+        return head.x == -1 || head.x > mMoveRange.x || head.y == -1 || head.y > mMoveRange.y;
+    }
 
-            dead = true;
-        }
-
-        // Eaten itself?
-        for (int i = segmentLocations.size() - 1; i > 0; i--) {
-            // Have any of the sections collided with the head
-            if (segmentLocations.get(0).x == segmentLocations.get(i).x &&
-                    segmentLocations.get(0).y == segmentLocations.get(i).y) {
-
-                dead = true;
+    boolean detectTailCollision() {
+        Point head = segmentLocations.get(0);
+        for (int i = 1; i < segmentLocations.size(); i++) {
+            if (head.equals(segmentLocations.get(i))) {
+                return true;
             }
         }
-        return dead;
+        return false;
     }
+
+
 
     boolean checkDinner(Point appleLocation) {
         if (segmentLocations.isEmpty()) {
