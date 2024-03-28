@@ -128,6 +128,12 @@ class Snake {
 
 
     void move() {
+
+        if (segmentLocations.isEmpty()) {
+            // If there are no segments, there's nothing to move
+            return;
+        }
+
         // Move the body
         // Start at the back and move it
         // to the position of the segment in front of it

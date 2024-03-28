@@ -235,7 +235,7 @@ class SnakeGame extends SurfaceView implements Runnable{
 
 
     // Do all the drawing
-    
+
     public void draw() {
         // Get a lock on the mCanvas
         if (mSurfaceHolder.getSurface().isValid()) {
@@ -329,16 +329,19 @@ class SnakeGame extends SurfaceView implements Runnable{
                     pauseButtonText = "Resume";
                 } else {
                     pauseButtonText = "Pause";
+                    // If the game is resuming from pause, start a new game
+                    newGame();
                 }
                 return true;
             }
-        }
 
-        if (!isPaused) {
-            // Let the Snake class handle the input
-            mSnake.switchHeading(motionEvent);
+            if (!isPaused) {
+                // Let the Snake class handle the input
+                mSnake.switchHeading(motionEvent);
+            }
+            return true;
         }
-        return true;
+        return super.onTouchEvent(motionEvent);
     }
 
 
@@ -359,4 +362,5 @@ class SnakeGame extends SurfaceView implements Runnable{
         mThread = new Thread(this);
         mThread.start();
     }
+
 }
