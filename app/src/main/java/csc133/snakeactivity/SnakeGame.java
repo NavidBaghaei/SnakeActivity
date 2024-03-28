@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
@@ -57,6 +58,9 @@ class SnakeGame extends SurfaceView implements Runnable{
     private Bitmap backgroundImage;
 
     private Point size;
+    private Rect pauseButtonRect;
+    private String pauseButtonText = "Pause";
+    private boolean isPaused = false;
 
     // This is the constructor method that gets called
     // from SnakeActivity
@@ -131,6 +135,15 @@ class SnakeGame extends SurfaceView implements Runnable{
         textPaint.setColor(Color.WHITE); // Set the text color
         textPaint.setTextAlign(Paint.Align.RIGHT); // Align text to the right
         textPaint.setTypeface(customTypeface);
+
+        int buttonWidth = 200;
+        int buttonHeight = 100;
+        int buttonMargin = 50;
+        pauseButtonRect = new Rect(size.x - buttonWidth - buttonMargin,
+                buttonMargin,
+                size.x - buttonMargin,
+                buttonMargin + buttonHeight);
+
     }
 
 
@@ -155,13 +168,9 @@ class SnakeGame extends SurfaceView implements Runnable{
     @Override
     public void run() {
         while (mPlaying) {
-            if(!mPaused) {
-                // Update 10 times a second
-                if (updateRequired()) {
-                    update();
-                }
+            if (!isPaused && updateRequired()) {
+                update();
             }
-
             draw();
         }
     }
@@ -195,6 +204,9 @@ class SnakeGame extends SurfaceView implements Runnable{
     // Update all the game objects
     public void update() {
 
+        if (isPaused) {
+            return;
+        }
         // Move the snake
         mSnake.move();
 
@@ -280,6 +292,20 @@ class SnakeGame extends SurfaceView implements Runnable{
             // Unlock the mCanvas and reveal the graphics for this frame
             mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
+
+        // In the draw() method
+        mPaint.setColor(Color.WHITE);
+        mPaint.setTextSize(35);
+// Draw the button as a rectangle
+        mCanvas.drawRect(pauseButtonRect, mPaint);
+// Change the color for the text
+        mPaint.setColor(Color.BLACK);
+// Draw the text on the button
+        float textWidth = mPaint.measureText(pauseButtonText);
+        int x = pauseButtonRect.left + (pauseButtonRect.width() - (int) textWidth) / 2;
+        int y = pauseButtonRect.top + (pauseButtonRect.height() + 30) / 2; // Adjust the 30 as needed
+        mCanvas.drawText(pauseButtonText, x, y, mPaint);
+
     }
 
     private void drawGrid(Canvas canvas) {
@@ -306,23 +332,25 @@ class SnakeGame extends SurfaceView implements Runnable{
 
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {
-        switch (motionEvent.getAction() & MotionEvent.ACTION_MASK) {
-            case MotionEvent.ACTION_UP:
-                if (mPaused) {
-                    mPaused = false;
-                    newGame();
+        if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+            int x = (int) motionEvent.getX();
+            int y = (int) motionEvent.getY();
 
-                    // Don't want to process snake direction for this tap
-                    return true;
+            // Check if the pause button is pressed
+            if (pauseButtonRect.contains(x, y)) {
+                isPaused = !isPaused; // Toggle the game's paused state
+                if (isPaused) {
+                    pauseButtonText = "Resume";
+                } else {
+                    pauseButtonText = "Pause";
                 }
+                return true;
+            }
+        }
 
-                // Let the Snake class handle the input
-                mSnake.switchHeading(motionEvent);
-                break;
-
-            default:
-                break;
-
+        if (!isPaused) {
+            // Let the Snake class handle the input
+            mSnake.switchHeading(motionEvent);
         }
         return true;
     }
