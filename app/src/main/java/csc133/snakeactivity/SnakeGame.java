@@ -62,6 +62,8 @@ class SnakeGame extends SurfaceView implements Runnable{
     private Rect pauseButtonRect;
     private String pauseButtonText = "Pause";
     private boolean isPaused = false;
+    private boolean isGameStarted = false;
+
 
     // This is the constructor method that gets called
     // from SnakeActivity
@@ -162,6 +164,8 @@ class SnakeGame extends SurfaceView implements Runnable{
 
         // Setup mNextFrameTime so an update can triggered
         mNextFrameTime = System.currentTimeMillis();
+
+        isGameStarted = false;
     }
 
 
@@ -308,25 +312,33 @@ class SnakeGame extends SurfaceView implements Runnable{
 
             // Check if the pause button is pressed
             if (pauseButtonRect.contains(x, y)) {
-                isPaused = !isPaused; // Toggle the game's paused state
-                if (isPaused) {
-                    pauseButtonText = "Resume";
-                } else {
-                    pauseButtonText = "Pause";
-                    // If the game is resuming from pause, start a new game
-                    newGame();
-                }
+                isPaused = !isPaused;
+                pauseButtonText = isPaused ? "Resume" : "Pause";
                 return true;
             }
 
-            if (!isPaused) {
-                // Let the Snake class handle the input
-                mSnake.switchHeading(motionEvent);
+            // If the game has not started yet, start a new game
+            if (!isGameStarted) {
+                newGame();
+                isGameStarted = true;
+                isPaused = false;
+                return true;
             }
+
+            // If the game is paused and the screen is tapped, resume the game
+            if (isPaused) {
+                isPaused = false;
+                return true;
+            }
+
+            // If the game is ongoing, handle the direction change
+            mSnake.switchHeading(motionEvent);
             return true;
         }
         return super.onTouchEvent(motionEvent);
     }
+
+
 
 
     // Stop the thread
