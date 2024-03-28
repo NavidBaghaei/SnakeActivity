@@ -125,10 +125,11 @@ class SnakeGame extends SurfaceView implements Runnable{
 
 
         // Call the constructors of our two game objects
-        mApple = new Apple(context,
-                new Point(NUM_BLOCKS_WIDE,
-                        mNumBlocksHigh),
-                blockSize);
+        // Inside SnakeGame's constructor or an initialization method
+        mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize,
+                location -> mSnake.isOccupying(location));
+
+
 
         mSnake = new Snake(context,
                 new Point(NUM_BLOCKS_WIDE,
@@ -159,6 +160,7 @@ class SnakeGame extends SurfaceView implements Runnable{
         );
     }
 
+
     // Called to start a new game
     public void newGame() {
         // reset the snake
@@ -180,41 +182,57 @@ class SnakeGame extends SurfaceView implements Runnable{
     }
 
 
+
     // Handles the game loop
 
     @Override
     public void run() {
         while (mPlaying) {
             if (!mPaused && updateRequired()) {
-                update(); // This method should update the game state, including moving objects
+                updateGameObjects(); // This method should update the game state, including moving objects
             }
-            draw(); // Directly call the draw method here
+            drawGameObjects(); // Directly call the draw method here
         }
     }
 
 
     private void updateGameObjects() {
+        // First, update each game object. This could involve moving the snake,
+        // checking for apple consumption, and more.
         for (GameObject obj : gameObjects) {
-            obj.update();
-        }
-        // Additional logic for collision detection, game state updates, etc.
-    }
-
-
-    private void drawGameObjects() {
-        if (mSurfaceHolder.getSurface().isValid()) {
-            mCanvas = mSurfaceHolder.lockCanvas();
-            // Setup drawing (clear canvas, draw background, etc.)
-
-            // Draw each game object
-            for (GameObject obj : gameObjects) {
-                obj.draw(mCanvas, mPaint);
+            // If the object is a Snake and a speed boost is active, move it faster
+            if (obj instanceof Snake && speedBoostUpdatesRemaining > 0) {
+                ((Snake)obj).move(true); // Speed boost active
+            } else {
+                obj.update(); // Normal update
             }
-
-            // Finalize drawing
-            mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
+
+        // Decrease the number of updates remaining for the speed boost
+        if (speedBoostUpdatesRemaining > 0) {
+            speedBoostUpdatesRemaining--;
+        }
+
+        // Check for collisions between the snake and the apple
+        if (mSnake.checkDinner(mApple.getLocation())) {
+            mApple.spawn(); // Respawn the apple
+            mScore += 1; // Increase score
+            mSP.play(mEat_ID, 1, 1, 0, 0, 1); // Play sound
+            speedBoostUpdatesRemaining = 20; // Reset the speed boost duration
+        }
+
+        // Check for death (collision with wall or self)
+        if (mSnake.detectDeath()) {
+            mSP.play(mCrashID, 1, 1, 0, 0, 1); // Play death sound
+            mPaused = true; // Pause the game
+            isGameStarted = false; // Mark game as not started/over
+            speedBoostUpdatesRemaining = 0; // Ensure speed boost is reset
+        }
+
+        // Any other shared game logic that affects the game state globally rather than
+        // being specific to any single object should be handled here.
     }
+
 
 
     // Check to see if it is time for an update
@@ -241,48 +259,17 @@ class SnakeGame extends SurfaceView implements Runnable{
         return false;
     }
 
-
-
+    
     // Update all the game objects
-    public void update() {
-        // If speed boost is active, apply it and decrement the counter
-        mSnake.move(speedBoostUpdatesRemaining > 0);
 
-        // Decrease the number of updates remaining for the speed boost
-        if (speedBoostUpdatesRemaining > 0) {
-            speedBoostUpdatesRemaining--;
-        }
-
-        // Rest of the update logic...
-        // Check for apple collision to activate the speed boost
-        if(mSnake.checkDinner(mApple.getLocation())){
-            mApple.spawn();
-            mScore += 1;
-            speedBoostUpdatesRemaining = 20; // Reset to 2 seconds worth of updates
-            mSP.play(mEat_ID, 1, 1, 0, 0, 1);
-        }
-
-        // Check if the snake has died
-        if (mSnake.detectDeath()) {
-            // Play the death sound and pause the game
-            mSP.play(mCrashID, 1, 1, 0, 0, 1);
-            // Reset the speed boost so it doesn't carry over
-            speedBoostUpdatesRemaining = 0;
-            mPaused = true;
-            isGameStarted = false;
-        }
-    }
-
-
-    // Do all the drawing
-    public void draw() {
+    private void drawGameObjects() {
         // First, validate that we have a valid drawing surface
         if (mSurfaceHolder.getSurface().isValid()) {
             // Lock the canvas for drawing
             mCanvas = mSurfaceHolder.lockCanvas();
 
             // Clear the screen with a specific color
-            mCanvas.drawColor(Color.argb(255, 8, 143, 143));
+            mCanvas.drawColor(Color.argb(255, 26, 128, 182));
 
             // If there's a background image, draw it on the entire canvas
             if (backgroundImage != null) {
@@ -301,11 +288,12 @@ class SnakeGame extends SurfaceView implements Runnable{
             mPaint.setTextSize(120);
 
             // Draw the current score
-            mCanvas.drawText("" + mScore, 20, 120, mPaint);
+            mCanvas.drawText("Score: " + mScore, 20, 120, mPaint);
 
             // Draw game objects: apple and snake. Make sure they implement GameObject and draw themselves
-            mApple.draw(mCanvas, mPaint);
-            mSnake.draw(mCanvas, mPaint);
+            for (GameObject obj : gameObjects) {
+                obj.draw(mCanvas, mPaint);
+            }
 
             // Draw developer names or any other info in the top right corner
             String names = "Arjun Bhargava & Navid Baghaei";
@@ -316,64 +304,57 @@ class SnakeGame extends SurfaceView implements Runnable{
             // Display a "Paused" message when the game is paused
             if (mPaused && isGameStarted) {
                 mPaint.setTextSize(250);
-                mCanvas.drawText("Paused", 200, 700, mPaint);
+                mCanvas.drawText("Paused", size.x / 4f, size.y / 2f, mPaint);
             }
 
             // Show "Tap to Play" when the game has not started or after the player dies
             if (!isGameStarted || (!mPaused && !isGameStarted)) {
                 mPaint.setTextSize(250);
-                mCanvas.drawText(getResources().getString(R.string.tap_to_play), 200, 700, mPaint);
+                mCanvas.drawText(getResources().getString(R.string.tap_to_play), size.x / 4f, size.y / 2f, mPaint);
             }
 
-            // Draw the pause button UI
+            // Draw the pause button (if you have one)
             drawPauseButton(mCanvas);
 
-            // Finally, post the canvas to the drawing surface
+            // Finalize drawing
             mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
     }
 
-
-
-
-
-    private void drawPauseButton(Canvas canvas) {
-        // Set the color for the button with reduced alpha for transparency
-        mPaint.setColor(Color.argb(128, 255, 255, 255)); // Half transparent white
-        mPaint.setTextSize(35);
-
-        // Draw the rectangle for the button
-        canvas.drawRect(pauseButtonRect, mPaint);
-
-        // Draw the text on the button
-        mPaint.setColor(Color.BLACK); // No need to make the text transparent
-        float textWidth = mPaint.measureText(pauseButtonText);
-        int textX = pauseButtonRect.left + (pauseButtonRect.width() - (int) textWidth) / 2;
-        int textY = pauseButtonRect.top + (pauseButtonRect.height() + 30) / 2;
-        canvas.drawText(pauseButtonText, textX, textY, mPaint);
-    }
-
-
     private void drawGrid(Canvas canvas) {
-        int gridSize = 20; //  determines the size of your grid
+        int gridSize = 40; // Number of blocks/squares in your grid horizontally and vertically
         float colWidth = canvas.getWidth() / (float) gridSize;
         float rowHeight = canvas.getHeight() / (float) gridSize;
-
-        // Set grid line color and stroke width
-        Paint paint = new Paint();
-        paint.setColor(Color.argb(255, 60, 60, 160)); // Dark gray color for the grid lines
-        paint.setStrokeWidth(0.5f); // Thin lines for the grid
+        Paint gridPaint = new Paint();
+        gridPaint.setColor(Color.argb(255, 255, 255, 255)); // Color of the grid lines
+        gridPaint.setStrokeWidth(1); // Width of the grid lines
 
         // Draw vertical grid lines
-        for (int col = 0; col <= gridSize; col++) {
-            canvas.drawLine(col * colWidth, 0, col * colWidth, canvas.getHeight(), paint);
+        for (int col = 0; col < gridSize; col++) {
+            canvas.drawLine(col * colWidth, 0, col * colWidth, canvas.getHeight(), gridPaint);
         }
 
         // Draw horizontal grid lines
-        for (int row = 0; row <= gridSize; row++) {
-            canvas.drawLine(0, row * rowHeight, canvas.getWidth(), row * rowHeight, paint);
+        for (int row = 0; row < gridSize; row++) {
+            canvas.drawLine(0, row * rowHeight, canvas.getWidth(), row * rowHeight, gridPaint);
         }
     }
+
+    private void drawPauseButton(Canvas canvas) {
+        // Assuming you have a pauseButtonRect and pauseButtonText defined elsewhere
+        Paint buttonPaint = new Paint();
+        buttonPaint.setColor(Color.argb(128, 0, 0, 0)); // Semi-transparent black
+        canvas.drawRect(pauseButtonRect, buttonPaint);
+
+        buttonPaint.setColor(Color.WHITE);
+        buttonPaint.setTextSize(35);
+        float textWidth = buttonPaint.measureText(pauseButtonText);
+        float x = pauseButtonRect.left + (pauseButtonRect.width() - textWidth) / 2;
+        float y = pauseButtonRect.top + (pauseButtonRect.height() - buttonPaint.descent() - buttonPaint.ascent()) / 2;
+        canvas.drawText(pauseButtonText, x, y, buttonPaint);
+    }
+
+
 
 
     @Override
