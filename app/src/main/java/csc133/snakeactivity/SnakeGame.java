@@ -119,7 +119,6 @@ class SnakeGame extends SurfaceView implements Runnable{
         mPaint.setTypeface(customTypeface);
 
 
-
         // Call the constructors of our two game objects
         mApple = new Apple(context,
                 new Point(NUM_BLOCKS_WIDE,
@@ -139,14 +138,16 @@ class SnakeGame extends SurfaceView implements Runnable{
         textPaint.setTypeface(customTypeface);
 
         int buttonWidth = 200;
-        int buttonHeight = 100;
+        int buttonHeight = 75;
         int buttonMargin = 50;
-        pauseButtonRect = new Rect(size.x - buttonWidth - buttonMargin,
-                buttonMargin,
+        int yOffset = 25;
+        pauseButtonRect = new Rect(
+                size.x - buttonWidth - buttonMargin,
+                buttonMargin + yOffset, // Moved down by yOffset
                 size.x - buttonMargin,
-                buttonMargin + buttonHeight);
+                buttonMargin + buttonHeight + yOffset // Moved down by yOffset
+        );
     }
-
 
     // Called to start a new game
     public void newGame() {
@@ -383,4 +384,9 @@ class SnakeGame extends SurfaceView implements Runnable{
         mThread = new Thread(this);
         mThread.start();
     }
+
+    public Snake getSnake() {
+        return mSnake;
+    }
+
 }
