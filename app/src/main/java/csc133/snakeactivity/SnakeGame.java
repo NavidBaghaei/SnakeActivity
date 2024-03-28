@@ -150,7 +150,6 @@ class SnakeGame extends SurfaceView implements Runnable{
 
     // Called to start a new game
     public void newGame() {
-
         // reset the snake
         mSnake.reset(NUM_BLOCKS_WIDE, mNumBlocksHigh);
 
@@ -160,11 +159,10 @@ class SnakeGame extends SurfaceView implements Runnable{
         // Reset the mScore
         mScore = 0;
 
-        // Setup mNextFrameTime so an update can triggered
+        // Setup mNextFrameTime so an update can be triggered
         mNextFrameTime = System.currentTimeMillis();
 
-        isGameStarted = false; // Reset game start flag
-        mPaused = true; // Start with the game paused
+        // No need to set isGameStarted or mPaused here as they are handled in onTouchEvent
     }
 
 
@@ -172,13 +170,9 @@ class SnakeGame extends SurfaceView implements Runnable{
     @Override
     public void run() {
         while (mPlaying) {
-            if(!mPaused) {
-                // Update 10 times a second
-                if (updateRequired()) {
-                    update();
-                }
+            if(!mPaused && updateRequired()) {
+                update();
             }
-
             draw();
         }
     }
@@ -329,18 +323,20 @@ class SnakeGame extends SurfaceView implements Runnable{
             int y = (int) motionEvent.getY();
 
             // Check if the pause button is pressed
-            if (pauseButtonRect.contains(x, y)) {
-                // Toggle the game's paused state only if the game has already started
-                if (isGameStarted) {
-                    mPaused = !mPaused;
-                    pauseButtonText = mPaused ? "Resume" : "Pause";
-                }
+            if (pauseButtonRect.contains(x, y) && isGameStarted) {
+                mPaused = !mPaused;
+                pauseButtonText = mPaused ? "Resume" : "Pause";
                 return true;
             } else if (!isGameStarted) {
                 // Start a new game with the first screen tap
                 newGame();
                 isGameStarted = true;
                 mPaused = false; // Ensure the game starts unpaused
+                mPlaying = true; // Make sure the game loop is running
+                if (mThread == null || !mThread.isAlive()) {
+                    mThread = new Thread(this);
+                    mThread.start();
+                }
                 return true;
             } else if (!mPaused) {
                 // Let the Snake class handle the input for direction change if the game is ongoing and not paused
