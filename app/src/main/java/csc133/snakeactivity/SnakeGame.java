@@ -125,10 +125,11 @@ class SnakeGame extends SurfaceView implements Runnable{
 
 
         // Call the constructors of our two game objects
-        mApple = new Apple(context,
-                new Point(NUM_BLOCKS_WIDE,
-                        mNumBlocksHigh),
-                blockSize);
+        // Inside SnakeGame's constructor or an initialization method
+        mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize,
+                location -> mSnake.isOccupying(location));
+
+
 
         mSnake = new Snake(context,
                 new Point(NUM_BLOCKS_WIDE,
@@ -159,6 +160,7 @@ class SnakeGame extends SurfaceView implements Runnable{
         );
     }
 
+
     // Called to start a new game
     public void newGame() {
         // reset the snake
@@ -178,6 +180,7 @@ class SnakeGame extends SurfaceView implements Runnable{
 
         speedBoost = false;
     }
+
 
 
     // Handles the game loop

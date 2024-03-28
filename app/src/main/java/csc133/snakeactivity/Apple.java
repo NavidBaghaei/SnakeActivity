@@ -15,21 +15,31 @@ class Apple implements GameObject {
     private Point mSpawnRange;
     private int mSize;
     private Bitmap mBitmapApple;
+    private SpaceChecker spaceChecker; // Add this line
 
-    Apple(Context context, Point sr, int s) {
+    public Apple(Context context, Point sr, int s, SpaceChecker spaceChecker) { // Updated constructor
         mSpawnRange = sr;
         mSize = s;
-        location.x = -10; // Initially place the apple off-screen
+        this.spaceChecker = spaceChecker; // Initialize the spaceChecker
 
+        // Load and scale the apple bitmap
         mBitmapApple = BitmapFactory.decodeResource(context.getResources(), R.drawable.apple);
         mBitmapApple = Bitmap.createScaledBitmap(mBitmapApple, s, s, false);
     }
 
     void spawn() {
         Random random = new Random();
+
         location.x = random.nextInt(mSpawnRange.x) + 1;
         location.y = random.nextInt(mSpawnRange.y - 1) + 1;
+
+        do {
+            location.x = random.nextInt(mSpawnRange.x);
+            location.y = random.nextInt(mSpawnRange.y);
+        } while (spaceChecker.isOccupied(location)); // Use the checker here
+
     }
+
 
 
     Point getLocation() {

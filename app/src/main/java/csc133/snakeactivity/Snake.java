@@ -286,6 +286,14 @@ public class Snake implements GameObject {
         }
     }
 
+    public boolean isOccupying(Point location) {
+        for (Point segment : segmentLocations) {
+            if (segment.equals(location)) {
+                return true; // The point is occupied by a segment of the snake
+            }
+        }
+        return false; // The point is not occupied by the snake
+    }
 
     // Handle changing direction
     void switchHeading(MotionEvent motionEvent) {
