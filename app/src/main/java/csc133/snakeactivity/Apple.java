@@ -15,9 +15,9 @@ class Apple implements GameObject {
     private Point mSpawnRange;
     private int mSize;
     private Bitmap mBitmapApple;
-    private SpaceChecker spaceChecker; // Add this line
+    private SpaceChecker spaceChecker;
 
-    public Apple(Context context, Point sr, int s, SpaceChecker spaceChecker) { // Updated constructor
+    public Apple(Context context, Point sr, int s, SpaceChecker spaceChecker) { 
         mSpawnRange = sr;
         mSize = s;
         this.spaceChecker = spaceChecker; // Initialize the spaceChecker
