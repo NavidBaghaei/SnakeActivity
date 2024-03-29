@@ -127,7 +127,7 @@ class SnakeGame extends SurfaceView implements Runnable{
         // Call the constructors of our two game objects
         // Inside SnakeGame's constructor or an initialization method
         mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize,
-                location -> mSnake.isOccupying(location));
+                location -> mSnake.isOccupied(location));
 
 
 

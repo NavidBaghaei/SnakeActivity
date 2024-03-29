@@ -11,7 +11,7 @@ import android.view.MotionEvent;
 
 import java.util.ArrayList;
 
-public class Snake implements GameObject {
+public class Snake implements GameObject, Movable, Collidable, SpaceChecker{
 
     // The location in the grid of all the segments
     private ArrayList<Point> segmentLocations;
@@ -131,7 +131,7 @@ public class Snake implements GameObject {
     public void update() {
         move();
     }
-
+    @Override
     public void move() {
 
         if (segmentLocations.isEmpty()) {
@@ -175,8 +175,8 @@ public class Snake implements GameObject {
 
     }
 
-
     // Overloaded move method with speed boost
+    @Override
     public void move(boolean speedBoost) {
         // Move the snake normally
         move();
@@ -194,18 +194,18 @@ public class Snake implements GameObject {
             this.heading = newHeading;
         }
     }
-
-    boolean detectDeath() {
+    @Override
+    public boolean detectDeath() {
         // Simplify the detection logic by calling the specific methods
         return detectWallCollision() || detectTailCollision();
     }
-
-    boolean detectWallCollision() {
+    @Override
+    public boolean detectWallCollision() {
         Point head = segmentLocations.get(0);
         return head.x == -1 || head.x > mMoveRange.x || head.y == -1 || head.y > mMoveRange.y;
     }
-
-    boolean detectTailCollision() {
+    @Override
+    public boolean detectTailCollision() {
         Point head = segmentLocations.get(0);
         for (int i = 1; i < segmentLocations.size(); i++) {
             if (head.equals(segmentLocations.get(i))) {
@@ -285,7 +285,8 @@ public class Snake implements GameObject {
         }
     }
 
-    public boolean isOccupying(Point location) {
+    @Override
+    public boolean isOccupied(Point location) {
         for (Point segment : segmentLocations) {
             if (segment.equals(location)) {
                 return true; // The point is occupied by a segment of the snake

@@ -36,7 +36,7 @@ class Apple implements GameObject {
         do {
             location.x = random.nextInt(mSpawnRange.x);
             location.y = random.nextInt(mSpawnRange.y);
-        } while (spaceChecker.isOccupied(location)); // Use the checker here
+        } while (spaceChecker.isOccupied(location));
 
     }
 
