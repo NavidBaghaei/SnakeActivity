@@ -229,8 +229,6 @@ class SnakeGame extends SurfaceView implements Runnable{
             speedBoostUpdatesRemaining = 0; // Ensure speed boost is reset
         }
 
-        // Any other shared game logic that affects the game state globally rather than
-        // being specific to any single object should be handled here.
     }
 
 
