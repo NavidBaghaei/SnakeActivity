@@ -316,6 +316,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+
     private void drawDeveloperNames(Canvas canvas) {
         Paint textPaint = new Paint();
         textPaint.setTextSize(40);
@@ -339,89 +340,88 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
-
-    private void drawPausedMessage() {
-        if (mPaused && isGameStarted) {
-            mPaint.setTextSize(250);
-            mCanvas.drawText("Paused", size.x / 4f, size.y / 2f, mPaint);
-        }
-    }
-
-    private void drawTapToPlayMessage() {
-        if (!isGameStarted || (!mPaused && !isGameStarted)) {
-            mPaint.setTextSize(250);
-            mCanvas.drawText(getResources().getString(R.string.tap_to_play), size.x / 4f, size.y / 2f, mPaint);
-        }
-    }
-
-    private void drawPauseButton() {
-        Paint buttonPaint = new Paint();
-        buttonPaint.setColor(Color.argb(128, 0, 0, 0));
-        mCanvas.drawRect(pauseButtonRect, buttonPaint);
-
-        buttonPaint.setColor(Color.WHITE);
-        buttonPaint.setTextSize(35);
-        float textWidth = buttonPaint.measureText(pauseButtonText);
-        float x = pauseButtonRect.left + (pauseButtonRect.width() - textWidth) / 2;
-        float y = pauseButtonRect.top + (pauseButtonRect.height() - buttonPaint.descent() - buttonPaint.ascent()) / 2;
-        mCanvas.drawText(pauseButtonText, x, y, buttonPaint);
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent motionEvent) {
-        if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-            int x = (int) motionEvent.getX();
-            int y = (int) motionEvent.getY();
-
-            if (pauseButtonRect.contains(x, y) && isGameStarted) {
-                togglePause();
-                return true;
-            } else if (!isGameStarted) {
-                startNewGame();
-                return true;
-            } else if (!mPaused) {
-                mSnake.switchHeading(motionEvent);
-                return true;
+        private void drawPausedMessage() {
+            if (mPaused && isGameStarted) {
+                mPaint.setTextSize(250);
+                mCanvas.drawText("Paused", size.x / 4f, size.y / 2f, mPaint);
             }
         }
-        return super.onTouchEvent(motionEvent);
-    }
 
-    public void pause() {
-        mPlaying = false;
-        try {
-            mThread.join();
-        } catch (InterruptedException e) {
-            // Handle error
+        private void drawTapToPlayMessage() {
+            if (!isGameStarted || (!mPaused && !isGameStarted)) {
+                mPaint.setTextSize(250);
+                mCanvas.drawText(getResources().getString(R.string.tap_to_play), size.x / 4f, size.y / 2f, mPaint);
+            }
         }
-    }
 
-    public void resume() {
-        mPlaying = true;
-        mThread = new Thread(this);
-        mThread.start();
-    }
+        private void drawPauseButton() {
+            Paint buttonPaint = new Paint();
+            buttonPaint.setColor(Color.argb(128, 0, 0, 0));
+            mCanvas.drawRect(pauseButtonRect, buttonPaint);
 
-    public Snake getSnake() {
-        return mSnake;
-    }
+            buttonPaint.setColor(Color.WHITE);
+            buttonPaint.setTextSize(35);
+            float textWidth = buttonPaint.measureText(pauseButtonText);
+            float x = pauseButtonRect.left + (pauseButtonRect.width() - textWidth) / 2;
+            float y = pauseButtonRect.top + (pauseButtonRect.height() - buttonPaint.descent() - buttonPaint.ascent()) / 2;
+            mCanvas.drawText(pauseButtonText, x, y, buttonPaint);
+        }
 
-    private void togglePause() {
-        mPaused = !mPaused;
-        pauseButtonText = mPaused ? "Resume" : "Pause";
-    }
+        @Override
+        public boolean onTouchEvent(MotionEvent motionEvent) {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                int x = (int) motionEvent.getX();
+                int y = (int) motionEvent.getY();
 
-    private void startNewGame() {
-        newGame();
-        isGameStarted = true;
-        mPaused = false;
-        mPlaying = true;
-        if (mThread == null || !mThread.isAlive()) {
+                if (pauseButtonRect.contains(x, y) && isGameStarted) {
+                    togglePause();
+                    return true;
+                } else if (!isGameStarted) {
+                    startNewGame();
+                    return true;
+                } else if (!mPaused) {
+                    mSnake.switchHeading(motionEvent);
+                    return true;
+                }
+            }
+            return super.onTouchEvent(motionEvent);
+        }
+
+        public void pause() {
+            mPlaying = false;
+            try {
+                mThread.join();
+            } catch (InterruptedException e) {
+                // Handle error
+            }
+        }
+
+        public void resume() {
+            mPlaying = true;
             mThread = new Thread(this);
             mThread.start();
         }
+
+        public Snake getSnake() {
+            return mSnake;
+        }
+
+        private void togglePause() {
+            mPaused = !mPaused;
+            pauseButtonText = mPaused ? "Resume" : "Pause";
+        }
+
+        private void startNewGame() {
+            newGame();
+            isGameStarted = true;
+            mPaused = false;
+            mPlaying = true;
+            if (mThread == null || !mThread.isAlive()) {
+                mThread = new Thread(this);
+                mThread.start();
+            }
+        }
+        public boolean isOccupied(Point location) {
+            return mSnake.isOccupied(location);
+        }
     }
-    public boolean isOccupied(Point location) {
-        return mSnake.isOccupied(location);
-    }
-}
