@@ -302,7 +302,7 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
     private void drawDeveloperNames() {
-        String names = "Arjun Bhargava & Navid Baghaei";
+        String names = "Arjun Bhargava & Navid Baghaei & Dagem Kebede & Rodrigo Guzman";
         int x = size.x - 20;
         int y = (int) (textPaint.getTextSize() + 20);
         mCanvas.drawText(names, x, y, textPaint);
