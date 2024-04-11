@@ -138,4 +138,11 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
             }
         }
     }
+    public Point getHeadLocation() {
+        if (!segmentLocations.isEmpty()) {
+            return new Point(segmentLocations.get(0));
+        }
+        return null; // Return null if there are no segments
+    }
+
 }

@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
@@ -59,6 +60,7 @@ class SnakeGame extends SurfaceView implements Runnable {
     private Snake mSnake;
 
     private Apple mApple;
+    private Shark mShark;
 
     private Bitmap backgroundImage;
 
@@ -96,6 +98,7 @@ class SnakeGame extends SurfaceView implements Runnable {
 
         mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, location -> mSnake.isOccupied(location));
         mSnake = new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize);
+        mShark = new Shark(getContext(), size.x / NUM_BLOCKS_WIDE, this::isOccupied, size.x, size.y);
     }
     private void loadSounds(Context context){
         // Initialize the SoundPool
@@ -155,6 +158,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         gameObjects = new ArrayList<>();
         gameObjects.add(mSnake);
         gameObjects.add(mApple);
+        gameObjects.add(mShark);
         //initialize text
         textPaint = new Paint();
         textPaint.setTextSize(40);
@@ -222,7 +226,12 @@ class SnakeGame extends SurfaceView implements Runnable {
             speedBoostUpdatesRemaining = 0;
             saveHighScore();
         }
-
+        if (isGameStarted && !mPaused) {
+            PointF targetLocation = new PointF(mSnake.getHeadLocation().x, mSnake.getHeadLocation().y);
+            if (!mShark.isMoving()) {
+                mShark.spawn(targetLocation);
+            }
+        }
     }
 
     // Check to see if it is time for an update
@@ -254,11 +263,11 @@ class SnakeGame extends SurfaceView implements Runnable {
         drawGrid();
         drawScore();
         drawGameObjectsOnCanvas();
-        drawDeveloperNames();
+        drawDeveloperNames(mCanvas);
         drawPausedMessage();
         drawTapToPlayMessage();
         drawPauseButton();
-
+        drawShark(mCanvas);
         mSurfaceHolder.unlockCanvasAndPost(mCanvas);
     }
 
@@ -269,6 +278,12 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
         mPaint.setColor(Color.argb(50, 0, 0, 0));
         mCanvas.drawRect(0, 0, mCanvas.getWidth(), mCanvas.getHeight(), mPaint);
+    }
+
+    private void drawShark(Canvas canvas) {
+        if (mShark != null) {
+            mShark.draw(canvas, mPaint);
+        }
     }
 
     private void drawGrid() {
@@ -301,12 +316,29 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
-    private void drawDeveloperNames() {
-        String names = "Arjun Bhargava & Navid Baghaei";
-        int x = size.x - 20;
-        int y = (int) (textPaint.getTextSize() + 20);
-        mCanvas.drawText(names, x, y, textPaint);
+    private void drawDeveloperNames(Canvas canvas) {
+        Paint textPaint = new Paint();
+        textPaint.setTextSize(40);
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextAlign(Paint.Align.RIGHT);
+
+        // Define your names
+        String[] names = {
+                "Arjun Bhargava & Navid Baghaei",
+                "Dagem Kebede & Rodrigo Guzman"
+        };
+
+        // Calculate where to start drawing the names
+        int x = size.x - 20; // Right align the text
+        int y = size.y - 80; // Starting position from the bottom
+
+        // Loop through each name and draw it on a new line
+        for (String name : names) {
+            canvas.drawText(name, x, y, textPaint);
+            y += textPaint.getTextSize(); // Move y position down for the next line
+        }
     }
+
 
     private void drawPausedMessage() {
         if (mPaused && isGameStarted) {
@@ -388,5 +420,8 @@ class SnakeGame extends SurfaceView implements Runnable {
             mThread = new Thread(this);
             mThread.start();
         }
+    }
+    public boolean isOccupied(Point location) {
+        return mSnake.isOccupied(location);
     }
 }
