@@ -24,6 +24,11 @@ import android.graphics.Typeface;
 import androidx.core.content.res.ResourcesCompat;
 import java.util.ArrayList;
 import android.content.SharedPreferences;
+import android.os.Handler;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
 
 class SnakeGame extends SurfaceView implements Runnable {
 
@@ -74,6 +79,15 @@ class SnakeGame extends SurfaceView implements Runnable {
     private int speedBoostUpdatesRemaining = 0;
     private ArrayList<GameObject> gameObjects;
 
+    private List<BadApple> badApples = new ArrayList<>();
+    private Handler handler = new Handler();
+    private Runnable spawnBadAppleRunnable = new Runnable() {
+        @Override
+        public void run() {
+            spawnBadApple();
+            handler.postDelayed(this, 30000 + new Random().nextInt(15000)); // 30 to 45 seconds
+        }
+    };
 
     // This is the constructor method that gets called
     // from SnakeActivity
@@ -159,6 +173,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         gameObjects.add(mSnake);
         gameObjects.add(mApple);
         gameObjects.add(mShark);
+        handler.postDelayed(spawnBadAppleRunnable, 30000 + new Random().nextInt(15000)); // Initial delay
         //initialize text
         textPaint = new Paint();
         textPaint.setTextSize(40);
@@ -176,6 +191,13 @@ class SnakeGame extends SurfaceView implements Runnable {
                 size.x - buttonMargin,
                 buttonMargin + buttonHeight + yOffset
         );
+    }
+
+    private void spawnBadApple() {
+        BadApple badApple = new BadApple(getContext(), new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), size.x / NUM_BLOCKS_WIDE, this::isOccupied);
+        badApple.spawn();
+        badApples.add(badApple);
+        gameObjects.add(badApple);
     }
 
     // Called to start a new game
@@ -202,9 +224,9 @@ class SnakeGame extends SurfaceView implements Runnable {
     private void updateGameObjects() {
         for (GameObject obj : gameObjects) {
             if (obj instanceof Snake && speedBoostUpdatesRemaining > 0) {
-                ((Snake) obj).move(true);
+                ((Snake) obj).move(true);  // Enhanced movement if speed boost is active
             } else {
-                obj.update();
+                obj.update();  // Regular update
             }
         }
 
@@ -212,20 +234,38 @@ class SnakeGame extends SurfaceView implements Runnable {
             speedBoostUpdatesRemaining--;
         }
 
+        // Check if the snake eats the regular apple
         if (mSnake.checkDinner(mApple.getLocation())) {
             mApple.spawn();
             mScore += 1;
             mSP.play(mEat_ID, 1, 1, 0, 0, 1);
-            speedBoostUpdatesRemaining = 20;
+            speedBoostUpdatesRemaining = 20;  // Apply speed boost
         }
 
+        // Check for collision with any BadApple
+        Iterator<BadApple> iterator = badApples.iterator();
+        while (iterator.hasNext()) {
+            BadApple badApple = iterator.next();
+            if (mSnake.checkDinner(badApple.getLocation())) {
+                // Apply the BadApple effect
+                mScore = Math.max(0, mScore - 3);  // Reduce score, avoid negative
+                mSnake.reduceLength(3);  // Reduce snake length
+                mSP.play(mCrash_ID, 1, 1, 0, 0, 1);  // Play crash sound
+                iterator.remove();  // Remove the eaten BadApple
+                gameObjects.remove(badApple);  // Remove from game objects
+            }
+        }
+
+        // Check if the snake dies
         if (mSnake.detectDeath()) {
             mSP.play(mCrash_ID, 1, 1, 0, 0, 1);
             mPaused = true;
             isGameStarted = false;
             speedBoostUpdatesRemaining = 0;
-            saveHighScore();
+            saveHighScore();  // Save the high score if applicable
         }
+
+        // Check for moving the shark if the game is not paused
         if (isGameStarted && !mPaused) {
             PointF targetLocation = new PointF(mSnake.getHeadLocation().x, mSnake.getHeadLocation().y);
             if (!mShark.isMoving()) {
@@ -233,6 +273,7 @@ class SnakeGame extends SurfaceView implements Runnable {
             }
         }
     }
+
 
     // Check to see if it is time for an update
     public boolean updateRequired() {
