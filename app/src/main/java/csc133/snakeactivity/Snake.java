@@ -66,11 +66,20 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
     boolean checkDinner(Point appleLocation) {
         Point head = segmentLocations.get(0);
         if (head.equals(appleLocation)) {
-            segmentLocations.add(new Point(-10, -10));
+            growSnake();
             return true;
         }
         return false;
     }
+
+    private void growSnake() {
+        // Add a new segment at the end of the snake in the appropriate position
+        Point tail = segmentLocations.get(segmentLocations.size() - 1);
+        Point newSegment = new Point(tail); // Duplicate the last segment position as a starting point
+        // Optionally adjust the newSegment position based on the direction of the snake's last segment, if needed
+        segmentLocations.add(newSegment);
+    }
+
 
     @Override
     public void draw(Canvas canvas, Paint paint) {
@@ -143,6 +152,12 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
             return new Point(segmentLocations.get(0));
         }
         return null; // Return null if there are no segments
+    }
+
+    public void reduceLength(int length) {
+        for (int i = 0; i < length && !segmentLocations.isEmpty(); i++) {
+            segmentLocations.remove(segmentLocations.size() - 1);
+        }
     }
 
 }
