@@ -7,8 +7,10 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import java.util.Random;
+import java.util.List;
+import java.util.Iterator;
 
-class BadApple implements GameObject {
+public class BadApple implements GameObject {
 
     private Point location = new Point();
     private Point mSpawnRange;
@@ -43,6 +45,11 @@ class BadApple implements GameObject {
 
     @Override
     public void update() {
-        // No update needed for static behavior
+        // No dynamic updates required for BadApple
+    }
+
+    public static void resetAll(List<BadApple> badApples, List<GameObject> gameObjects) {
+        badApples.clear();
+        gameObjects.removeIf(obj -> obj instanceof BadApple);
     }
 }

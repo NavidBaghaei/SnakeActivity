@@ -85,7 +85,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         @Override
         public void run() {
             spawnBadApple();
-            handler.postDelayed(this, 30000 + new Random().nextInt(15000)); // 30 to 45 seconds
+            handler.postDelayed(this, 10000 + new Random().nextInt(10000));
         }
     };
 
@@ -200,16 +200,6 @@ class SnakeGame extends SurfaceView implements Runnable {
         gameObjects.add(badApple);
     }
 
-    // Called to start a new game
-    public void newGame() {
-        mSnake.reset(NUM_BLOCKS_WIDE, mNumBlocksHigh);
-        mApple.spawn();
-        mScore = 0;
-        mNextFrameTime = System.currentTimeMillis();
-        isGameStarted = true;
-        mPaused = false;
-        speedBoost = false;
-    }
 
     @Override
     public void run() {
@@ -222,58 +212,62 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
     private void updateGameObjects() {
-        for (GameObject obj : gameObjects) {
-            if (obj instanceof Snake && speedBoostUpdatesRemaining > 0) {
-                ((Snake) obj).move(true);  // Enhanced movement if speed boost is active
-            } else {
-                obj.update();  // Regular update
-            }
-        }
-
-        if (speedBoostUpdatesRemaining > 0) {
-            speedBoostUpdatesRemaining--;
-        }
-
-        // Check if the snake eats the regular apple
-        if (mSnake.checkDinner(mApple.getLocation())) {
-            mApple.spawn();
-            mScore += 1;
-            mSP.play(mEat_ID, 1, 1, 0, 0, 1);
-            speedBoostUpdatesRemaining = 20;  // Apply speed boost
-        }
-
-        // Check for collision with any BadApple
-        Iterator<BadApple> iterator = badApples.iterator();
+        Iterator<GameObject> iterator = gameObjects.iterator();
         while (iterator.hasNext()) {
-            BadApple badApple = iterator.next();
-            if (mSnake.checkDinner(badApple.getLocation())) {
-                // Apply the BadApple effect
-                mScore = Math.max(0, mScore - 3);  // Reduce score, avoid negative
-                mSnake.reduceLength(3);  // Reduce snake length
-                mSP.play(mCrash_ID, 1, 1, 0, 0, 1);  // Play crash sound
-                iterator.remove();  // Remove the eaten BadApple
-                gameObjects.remove(badApple);  // Remove from game objects
-            }
-        }
+            GameObject obj = iterator.next();
 
-        // Check if the snake dies
-        if (mSnake.detectDeath()) {
-            mSP.play(mCrash_ID, 1, 1, 0, 0, 1);
-            mPaused = true;
-            isGameStarted = false;
-            speedBoostUpdatesRemaining = 0;
-            saveHighScore();  // Save the high score if applicable
-        }
+            if (obj instanceof Snake) {
+                Snake snake = (Snake) obj;
+                if (speedBoostUpdatesRemaining > 0) {
+                    snake.move(true);
+                    speedBoostUpdatesRemaining--;
+                } else {
+                    snake.update();
+                }
 
-        // Check for moving the shark if the game is not paused
-        if (isGameStarted && !mPaused) {
-            PointF targetLocation = new PointF(mSnake.getHeadLocation().x, mSnake.getHeadLocation().y);
-            if (!mShark.isMoving()) {
-                mShark.spawn(targetLocation);
+                if (snake.detectDeath()) {
+                    gameOver();
+                    return; // Exit method after calling gameOver()
+                }
+            } else {
+                obj.update();
             }
+
+            if (obj instanceof Apple && mSnake.checkDinner(((Apple) obj).getLocation())) {
+                mApple.spawn();
+                mScore += 1;
+                mSP.play(mEat_ID, 1, 1, 0, 0, 1);
+                speedBoostUpdatesRemaining = 20; // Reset speed boost duration
+            }
+
+            if (obj instanceof BadApple && mSnake.checkDinner(((BadApple) obj).getLocation())) {
+                if (mSnake.segmentLocations.size() > 1) {
+                    int segmentsToRemove = Math.min(4, mSnake.segmentLocations.size() - 1); // Calculate the maximum number of segments to remove
+                    mScore = Math.max(0, mScore - 3); // Adjust score by removing 3 points
+                    mSnake.reduceLength(segmentsToRemove); // Reduce snake length by the calculated amount
+                    mSP.play(mCrash_ID, 1, 1, 0, 0, 1);
+                    iterator.remove(); // Remove bad apple safely
+                } else {
+                    gameOver(); // End game if snake is too short to safely subtract segments
+                    return; // Exit method after calling gameOver()
+                }
+            }
+
+
         }
     }
 
+    private void gameOver() {
+        mSP.play(mCrash_ID, 1, 1, 0, 0, 1);
+        mPaused = true;
+        isGameStarted = false;
+        speedBoostUpdatesRemaining = 0;
+        saveHighScore();
+        Log.d("SnakeGame", "Game Over!");
+
+        // Reset all instances of BadApple
+        BadApple.resetAll(badApples, gameObjects);
+    }
 
     // Check to see if it is time for an update
     public boolean updateRequired() {
@@ -452,17 +446,48 @@ class SnakeGame extends SurfaceView implements Runnable {
             pauseButtonText = mPaused ? "Resume" : "Pause";
         }
 
-        private void startNewGame() {
-            newGame();
-            isGameStarted = true;
-            mPaused = false;
-            mPlaying = true;
-            if (mThread == null || !mThread.isAlive()) {
-                mThread = new Thread(this);
-                mThread.start();
-            }
+    // Combined method for starting or restarting the game
+    private void startNewGame() {
+        // Pause the game if it's currently running
+        if (mThread != null && mThread.isAlive()) {
+            pause();
         }
-        public boolean isOccupied(Point location) {
+
+        // Reset game state
+        mSnake.reset(NUM_BLOCKS_WIDE, mNumBlocksHigh);
+        mApple.spawn();
+        mScore = 0;
+        mNextFrameTime = System.currentTimeMillis();
+        isGameStarted = true;
+        mPaused = false;
+        speedBoost = false;
+
+        // Clear and reset all BadApples
+        BadApple.resetAll(badApples, gameObjects); // Make sure this method is correctly removing BadApples from gameObjects
+
+        // Ensure game objects are correctly initialized
+        gameObjects.clear();  // Clear old game objects
+        gameObjects.add(mSnake);
+        gameObjects.add(mApple);
+        gameObjects.add(mShark); // Assuming you want to keep the shark in the game
+
+        // Re-initiate BadApple spawning mechanism if it's part of the game dynamics
+        handler.removeCallbacks(spawnBadAppleRunnable);
+        handler.postDelayed(spawnBadAppleRunnable, 30000 + new Random().nextInt(15000)); // Initial delay
+
+        // Start the thread if not already running
+        if (mThread == null || !mThread.isAlive()) {
+            mPlaying = true;
+            mThread = new Thread(this);
+            mThread.start();
+        } else {
+            // Resume the game if it was paused
+            resume();
+        }
+    }
+
+
+    public boolean isOccupied(Point location) {
             return mSnake.isOccupied(location);
         }
     }
