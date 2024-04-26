@@ -52,7 +52,7 @@ public class SnakeActivity extends Activity {
         mSnakeGame.pause();
     }
 
-    @Override
+
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
             case KeyEvent.KEYCODE_DPAD_UP:
@@ -67,6 +67,8 @@ public class SnakeActivity extends Activity {
             case KeyEvent.KEYCODE_DPAD_RIGHT:
                 mSnakeGame.getSnake().updateHeading(Snake.Heading.RIGHT);
                 return true;
+            case KeyEvent.KEYCODE_SPACE:
+
         }
         return super.onKeyDown(keyCode, event);
     }
