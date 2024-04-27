@@ -88,17 +88,15 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     };
 
-
-
-
     public SnakeGame(Context context, Point size) {
         super(context);
         this.size = size;
         Typeface customTypeface = ResourcesCompat.getFont(context, R.font.workbench);
-        loadSounds(context);
-        initializeGame(context, size);
-        badApples = new ArrayList<>(); // Initialization of the badApples list
         initializeGameObjects(customTypeface);
+        loadSounds(context);
+        initializeGame(context,size);
+
+
     }
 
     private void initializeGame(Context context, Point size){
@@ -423,22 +421,24 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
     private void drawPauseButton() {
-        Paint buttonPaint = new Paint();
-        buttonPaint.setColor(Color.argb(128, 0, 0, 0));
-        mCanvas.drawRect(pauseButtonRect, buttonPaint);
-        buttonPaint.setColor(Color.WHITE);
-        buttonPaint.setTextSize(35);
-        float textWidth = buttonPaint.measureText(pauseButtonText);
-        float x = pauseButtonRect.left + (pauseButtonRect.width() - textWidth) / 2;
-        float y = pauseButtonRect.top + (pauseButtonRect.height() - buttonPaint.descent() - buttonPaint.ascent()) / 2;
-        mCanvas.drawText(pauseButtonText, x, y, buttonPaint);
-    }
+            Paint buttonPaint = new Paint();
+            buttonPaint.setColor(Color.argb(128, 0, 0, 0));
+            mCanvas.drawRect(pauseButtonRect, buttonPaint);
+
+            buttonPaint.setColor(Color.WHITE);
+            buttonPaint.setTextSize(35);
+            float textWidth = buttonPaint.measureText(pauseButtonText);
+            float x = pauseButtonRect.left + (pauseButtonRect.width() - textWidth) / 2;
+            float y = pauseButtonRect.top + (pauseButtonRect.height() - buttonPaint.descent() - buttonPaint.ascent()) / 2;
+            mCanvas.drawText(pauseButtonText, x, y, buttonPaint);
+        }
 
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {
         if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
             int x = (int) motionEvent.getX();
             int y = (int) motionEvent.getY();
+
             if (pauseButtonRect.contains(x, y) && isGameStarted) {
                 togglePause();
                 return true;
@@ -454,24 +454,19 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
     public void pause() {
-        mPaused = true;
-        handler.removeCallbacks(spawnBadAppleRunnable);
-        isSpawnScheduled = false; // Reset the flag when game is paused
-    }
-
-
-    public void resume() {
-        mPaused = false;
-        if (!mPlaying) {
-            mPlaying = true;
-            mThread = new Thread(this);
-            mThread.start();
-            if (!isSpawnScheduled) { // Check flag before scheduling
-                scheduleNextBadAppleSpawn();
-            }
+        mPlaying = false;
+        try {
+            mThread.join();
+        } catch (InterruptedException e) {
+            // Handle error
         }
     }
 
+    public void resume() {
+        mPlaying = true;
+        mThread = new Thread(this);
+        mThread.start();
+    }
 
     public Snake getSnake() {
         return mSnake;
