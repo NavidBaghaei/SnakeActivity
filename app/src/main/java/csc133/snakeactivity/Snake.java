@@ -7,19 +7,18 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
-import android.graphics.PointF;
 import android.view.MotionEvent;
+
 import java.util.ArrayList;
 
 public class Snake extends MoveCollide implements GameObject, SpaceChecker {
+
     private Bitmap mBitmapHeadRight;
     private Bitmap mBitmapHeadLeft;
     private Bitmap mBitmapHeadUp;
     private Bitmap mBitmapHeadDown;
     private Bitmap mBitmapBody;
     private int halfWayPoint;
-    private int mScore; // Track the score
-    private int segmentSize;
 
     Snake(Context context, Point mr, int ss) {
         segmentLocations = new ArrayList<>();
@@ -48,19 +47,10 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
     }
 
     void reset(int w, int h) {
-        // Reset the heading to the initial direction, typically to the right
         heading = Heading.RIGHT;
-
-        // Clear any existing segments to prepare for a new game start
         segmentLocations.clear();
-
-        // Add the initial segment of the snake at the center of the game area
         segmentLocations.add(new Point(w / 2, h / 2));
-
-        // Reset the score to zero for the new game
-        mScore = 0;
     }
-
 
     @Override
     public void update() {
@@ -74,111 +64,22 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
     }
 
     boolean checkDinner(Point appleLocation) {
-        // Check if there are any segments before accessing them
-        if (segmentLocations.isEmpty()) {
-            return false; // Return false if there are no segments to check against
-        }
-
-        // Retrieve the head of the snake
         Point head = segmentLocations.get(0);
-
-        // Check if the head of the snake is at the same location as the apple
         if (head.equals(appleLocation)) {
-            // Add a new segment at a non-visible location; this will be adjusted by the snake's movement logic
-            segmentLocations.add(new Point(-10, -10));
-
-            // Increment the score for each new segment
-            mScore++;
-
-            return true; // Return true if the snake has eaten the apple
-        }
-        return false; // Return false if the snake has not eaten the apple
-    }
-
-
-    public boolean checkCollisionWithHead(PointF sharkPoint, int sharkWidth, int sharkHeight) {
-        // Ensure there is at least one segment to check against
-        if (segmentLocations.isEmpty()) {
-            return false; // Early exit if there are no segments
-        }
-
-        // Retrieve the head of the snake
-        Point head = segmentLocations.get(0); // Safe to access as we've checked the list is not empty
-
-        // Calculate the bounds of the snake's head
-        float headLeft = head.x * mSegmentSize;
-        float headRight = (head.x + 1) * mSegmentSize;
-        float headTop = head.y * mSegmentSize;
-        float headBottom = (head.y + 1) * mSegmentSize;
-
-        // Calculate the bounds of the shark
-        float sharkLeft = sharkPoint.x;
-        float sharkRight = sharkPoint.x + sharkWidth;
-        float sharkTop = sharkPoint.y;
-        float sharkBottom = sharkPoint.y + sharkHeight;
-
-        // Check if the shark's position intersects with the head of the snake
-        return (sharkLeft < headRight && sharkRight > headLeft &&
-                sharkTop < headBottom && sharkBottom > headTop);
-    }
-
-
-
-    // Method within the Snake class to reduce the length of the snake by a certain number of segments
-    public void reduceLength(int lengthToRemove) {
-        // Check to make sure we're not trying to remove more segments than exist
-        int segmentsToRemove = Math.min(lengthToRemove, segmentLocations.size() - 1);
-        // Remove the specified number of segments from the end of the list
-        for (int i = 0; i < segmentsToRemove; i++) {
-            if (!segmentLocations.isEmpty()) {
-                segmentLocations.remove(segmentLocations.size() - 1);
-            }
-        }
-    }
-
-    public boolean checkCollisionWithBody(PointF sharkPoint) {
-        for (int i = 1; i < segmentLocations.size(); i++) {
-            Point part = segmentLocations.get(i);
-            if (sharkPoint.x >= part.x * mSegmentSize && sharkPoint.x <= (part.x + 1) * mSegmentSize &&
-                    sharkPoint.y >= part.y * mSegmentSize && sharkPoint.y <= (part.y + 1) * mSegmentSize) {
-                removeSegmentsFrom(i);
-                return true;
-            }
+            growSnake();
+            return true;
         }
         return false;
     }
 
-    private void removeSegmentsFrom(int index) {
-        int segmentsToRemove = segmentLocations.size() - index;
-        segmentLocations.subList(index, segmentLocations.size()).clear();
-        mScore -= segmentsToRemove; // Decrement score by the number of removed segments
-        if (mScore < 0) mScore = 0; // Ensure the score does not go negative
+    private void growSnake() {
+        // Add a new segment at the end of the snake in the appropriate position
+        Point tail = segmentLocations.get(segmentLocations.size() - 1);
+        Point newSegment = new Point(tail); // Duplicate the last segment position as a starting point
+        // Optionally adjust the newSegment position based on the direction of the snake's last segment, if needed
+        segmentLocations.add(newSegment);
     }
 
-    public int removeCollidedSegments(PointF sharkPoint) {
-        int segmentsRemoved = 0;
-        for (int i = 1; i < segmentLocations.size(); i++) {
-            Point part = segmentLocations.get(i);
-            if (sharkPoint.x >= part.x * mSegmentSize && sharkPoint.x <= (part.x + 1) * mSegmentSize &&
-                    sharkPoint.y >= part.y * mSegmentSize && sharkPoint.y <= (part.y + 1) * mSegmentSize) {
-                segmentsRemoved = segmentLocations.size() - i;
-                segmentLocations.subList(i, segmentLocations.size()).clear(); // Remove from collision point to end of tail
-                mScore -= segmentsRemoved; // Decrease score based on the number of segments removed
-                break;
-            }
-        }
-        return segmentsRemoved;
-    }
-
-
-    private void updateScore(int value) {
-        mScore += value;
-        if (mScore < 0) mScore = 0; // Ensure the score does not go negative
-    }
-
-    public int getScore() {
-        return mScore;
-    }
 
     @Override
     public void draw(Canvas canvas, Paint paint) {
@@ -246,9 +147,6 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
             }
         }
     }
-    public int getSegmentSize() {
-        return this.segmentSize;
-    }
     public Point getHeadLocation() {
         if (!segmentLocations.isEmpty()) {
             return new Point(segmentLocations.get(0));
@@ -261,4 +159,5 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
             segmentLocations.remove(segmentLocations.size() - 1);
         }
     }
+
 }
