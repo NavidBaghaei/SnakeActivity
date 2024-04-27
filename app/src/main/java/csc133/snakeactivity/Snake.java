@@ -159,5 +159,4 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
             segmentLocations.remove(segmentLocations.size() - 1);
         }
     }
-
 }
