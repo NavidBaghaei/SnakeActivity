@@ -509,7 +509,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
 
         // Reset the update interval to the initial value
-        updateInterval = 100; // Reset to 1 second
+        updateInterval = 100; // Reset to 100ms
         applesEaten = 0; // Reset the apples eaten counter
 
 
