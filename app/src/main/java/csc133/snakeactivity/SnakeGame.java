@@ -80,17 +80,30 @@ class SnakeGame extends SurfaceView implements Runnable {
         super(context);
         this.size = size;
         Typeface customTypeface = ResourcesCompat.getFont(context, R.font.workbench);
-        loadSounds(context);
-        initializeGame(context, size);
         badApples = new ArrayList<>(); // Initialization of the badApples list
         initializeGameObjects(customTypeface);
+        loadSounds(context);
+        initializeGame(context,size);
+
+
     }
 
     private void initializeGame(Context context, Point size){
         int blockSize = size.x / NUM_BLOCKS_WIDE;
         mNumBlocksHigh = size.y / blockSize;
-        backgroundImage = BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1);
-        backgroundImage = Bitmap.createScaledBitmap(backgroundImage, size.x, size.y, false);
+        
+        // Load and scale all background images
+        backgroundImages = new Bitmap[]{
+                BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1),
+                //BitmapFactory.decodeResource(context.getResources(), R.drawable.snake2),
+                // Add more backgrounds as needed
+        };
+        for (int i = 0; i < backgroundImages.length; i++) {
+            backgroundImages[i] = Bitmap.createScaledBitmap(backgroundImages[i], size.x, size.y, false);
+        }
+
+        // Set the initial background
+        backgroundImage = backgroundImages[backgroundIndex];
         mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, location -> mSnake.isOccupied(location));
         mSnake = new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize);
         // Assuming mSnake is already initialized and represents your Snake object
@@ -185,8 +198,14 @@ class SnakeGame extends SurfaceView implements Runnable {
         while (iterator.hasNext()) {
             GameObject obj = iterator.next();
 
-            if (obj instanceof Snake && speedBoostUpdatesRemaining > 0) {
-                ((Snake) obj).move(true); // Move snake with speed boost if remaining
+            if (obj instanceof Snake) {
+                Snake snake = (Snake) obj;
+                snake.update(); // Update snake without speed logic
+
+                if (snake.detectDeath()) {
+                    gameOver();
+                    return; // Exit method after calling gameOver()
+                }
             } else {
                 obj.update(); // Update all game objects normally
             }
@@ -216,7 +235,15 @@ class SnakeGame extends SurfaceView implements Runnable {
                 mApple.spawn();
                 mScore += 1;
                 mSP.play(mEat_ID, 1, 1, 0, 0, 1);
-                speedBoostUpdatesRemaining = 5;
+                applesEaten+=1;
+
+                // Check if 10 apples have been eaten
+                if (applesEaten % 10 == 0) {
+                    changeBackground();
+                }
+                if (applesEaten % 5 == 0) {
+                    increaseDifficulty();
+                }
             }
 
             // Check for BadApple effects
@@ -229,20 +256,27 @@ class SnakeGame extends SurfaceView implements Runnable {
                 mScore = Math.max(0, mScore); // Ensure the score does not go negative
             }
         }
-
-        if (speedBoostUpdatesRemaining > 0) {
-            speedBoostUpdatesRemaining--;
-        }
-
-        if (mSnake.detectDeath()) {
-            gameOver();
-        }
     }
 
+    // Method to change the background
+    private void changeBackground() {
+        // Increment the background index and loop back if necessary
+        backgroundIndex = (backgroundIndex + 1) % backgroundImages.length;
+        backgroundImage = backgroundImages[backgroundIndex];
 
+        // Invalidate the view to force a redraw with the new background
+        postInvalidate();
+    }
+    @Override
+    protected void onDraw(Canvas canvas) {
+        // Make sure to draw the current background image
+        canvas.drawBitmap(backgroundImage, 0, 0, null);
+    }
 
-
-
+    private void increaseDifficulty() {
+        // Decrease the update interval to make the game update faster (snake moves faster)
+        updateInterval = Math.max(updateInterval - 10, 20); // Decrease by 10ms, don't go below 20ms
+    }
 
     private void gameOver() {
         mSP.play(mCrash_ID, 1, 1, 0, 0, 1);
@@ -255,10 +289,9 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
     public boolean updateRequired() {
-        final long TARGET_FPS = 10;
-        final long MILLIS_PER_SECOND = 1000;
         if (mNextFrameTime <= System.currentTimeMillis()) {
-            mNextFrameTime = System.currentTimeMillis() + MILLIS_PER_SECOND / TARGET_FPS;
+            // Use the variable update interval based on the current difficulty
+            mNextFrameTime = System.currentTimeMillis() + updateInterval;
             return true;
         }
         return false;
@@ -328,9 +361,25 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
     private void drawDeveloperNames(Canvas canvas) {
+        if (namesDisplayStartTime == -1) {
+            namesDisplayStartTime = System.currentTimeMillis();
+            isNamesFading = true;
+        }
+
+        long elapsedTime = System.currentTimeMillis() - namesDisplayStartTime;
+        if (elapsedTime > FADE_DURATION) {
+            isNamesFading = false;
+            return; // Stop drawing after the fade duration has passed
+        }
+
+        // Calculate the alpha based on the elapsed time
+        int alpha = (int) (255 - (elapsedTime * 255 / FADE_DURATION));
+        alpha = Math.max(alpha, 0); // Ensure alpha doesn't go below 0
+
         Paint textPaint = new Paint();
         textPaint.setTextSize(40);
         textPaint.setColor(Color.WHITE);
+        textPaint.setAlpha(alpha); // Set the calculated alpha
         textPaint.setTextAlign(Paint.Align.RIGHT);
         String[] names = {"Arjun Bhargava & Navid Baghaei", "Dagem Kebede & Rodrigo Guzman"};
         int x = size.x - 20;
@@ -338,6 +387,11 @@ class SnakeGame extends SurfaceView implements Runnable {
         for (String name : names) {
             canvas.drawText(name, x, y, textPaint);
             y += textPaint.getTextSize();
+        }
+
+        if (isNamesFading) {
+            // Invalidate the view to trigger a redraw
+            invalidate();
         }
     }
 
@@ -356,22 +410,24 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
     private void drawPauseButton() {
-        Paint buttonPaint = new Paint();
-        buttonPaint.setColor(Color.argb(128, 0, 0, 0));
-        mCanvas.drawRect(pauseButtonRect, buttonPaint);
-        buttonPaint.setColor(Color.WHITE);
-        buttonPaint.setTextSize(35);
-        float textWidth = buttonPaint.measureText(pauseButtonText);
-        float x = pauseButtonRect.left + (pauseButtonRect.width() - textWidth) / 2;
-        float y = pauseButtonRect.top + (pauseButtonRect.height() - buttonPaint.descent() - buttonPaint.ascent()) / 2;
-        mCanvas.drawText(pauseButtonText, x, y, buttonPaint);
-    }
+            Paint buttonPaint = new Paint();
+            buttonPaint.setColor(Color.argb(128, 0, 0, 0));
+            mCanvas.drawRect(pauseButtonRect, buttonPaint);
+
+            buttonPaint.setColor(Color.WHITE);
+            buttonPaint.setTextSize(35);
+            float textWidth = buttonPaint.measureText(pauseButtonText);
+            float x = pauseButtonRect.left + (pauseButtonRect.width() - textWidth) / 2;
+            float y = pauseButtonRect.top + (pauseButtonRect.height() - buttonPaint.descent() - buttonPaint.ascent()) / 2;
+            mCanvas.drawText(pauseButtonText, x, y, buttonPaint);
+        }
 
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {
         if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
             int x = (int) motionEvent.getX();
             int y = (int) motionEvent.getY();
+
             if (pauseButtonRect.contains(x, y) && isGameStarted) {
                 togglePause();
                 return true;
@@ -387,24 +443,19 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
     public void pause() {
-        mPaused = true;
-        handler.removeCallbacks(spawnBadAppleRunnable);
-        isSpawnScheduled = false; // Reset the flag when game is paused
-    }
-
-
-    public void resume() {
-        mPaused = false;
-        if (!mPlaying) {
-            mPlaying = true;
-            mThread = new Thread(this);
-            mThread.start();
-            if (!isSpawnScheduled) { // Check flag before scheduling
-                scheduleNextBadAppleSpawn();
-            }
+        mPlaying = false;
+        try {
+            mThread.join();
+        } catch (InterruptedException e) {
+            // Handle error
         }
     }
 
+    public void resume() {
+        mPlaying = true;
+        mThread = new Thread(this);
+        mThread.start();
+    }
 
     public Snake getSnake() {
         return mSnake;
@@ -421,8 +472,12 @@ class SnakeGame extends SurfaceView implements Runnable {
             pause(); // Pause the game which also stops the thread and clears bad apple callbacks.
         }
 
-        // Clear the game objects list and reinitialize game objects
-        gameObjects.clear();
+        // Reset the update interval to the initial value
+        updateInterval = 100; // Reset to 1 second
+        applesEaten = 0; // Reset the apples eaten counter
+
+
+        // Reset game state
         mSnake.reset(NUM_BLOCKS_WIDE, mNumBlocksHigh);
         mApple.spawn();
         mShark.reset();
@@ -438,8 +493,12 @@ class SnakeGame extends SurfaceView implements Runnable {
         speedBoost = false;
         mPlaying = true;
 
-        // Reset and clear any lingering BadApples and prepare the game objects list
-        BadApple.resetAll(badApples, gameObjects);
+        // Reset the background index for a new game
+        backgroundIndex = 0;
+        backgroundImage = backgroundImages[backgroundIndex];
+
+        // Clear and reset all BadApples
+        BadApple.resetAll(badApples, gameObjects); // Make sure this method is correctly removing BadApples from gameObjects
 
         // Start or restart the game thread
         if (mThread == null || !mThread.isAlive()) {
