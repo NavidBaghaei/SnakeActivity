@@ -153,4 +153,11 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
         }
         return null; // Return null if there are no segments
     }
+
+    public void reduceLength(int length) {
+        for (int i = 0; i < length && !segmentLocations.isEmpty(); i++) {
+            segmentLocations.remove(segmentLocations.size() - 1);
+        }
+    }
+
 }

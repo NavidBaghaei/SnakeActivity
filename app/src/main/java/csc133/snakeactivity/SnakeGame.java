@@ -31,7 +31,22 @@ import java.util.List;
 import java.util.Random;
 
 class SnakeGame extends SurfaceView implements Runnable {
+
+    // Objects for the game loop/thread
     private Thread mThread = null;
+    //backgrounds being loaded
+    private int backgroundIndex = 0; // To keep track of the current background
+    private Bitmap[] backgroundImages; // Array to hold background images
+    //fade names
+    private long namesDisplayStartTime = -1;
+    private boolean isNamesFading = false;
+    private static final long FADE_DURATION = 3000; // 3 seconds fade duration
+
+    //speed logic
+    private int applesEaten = 0;
+    private long updateInterval = 100;
+
+    // Control pausing between updates
     private long mNextFrameTime;
     // Is the game currently playing and or paused?
     private volatile boolean mPlaying = false;
@@ -88,7 +103,6 @@ class SnakeGame extends SurfaceView implements Runnable {
         super(context);
         this.size = size;
         Typeface customTypeface = ResourcesCompat.getFont(context, R.font.workbench);
-        badApples = new ArrayList<>(); // Initialization of the badApples list
         initializeGameObjects(customTypeface);
         loadSounds(context);
         initializeGame(context,size);
@@ -99,7 +113,7 @@ class SnakeGame extends SurfaceView implements Runnable {
     private void initializeGame(Context context,Point size){
         int blockSize = size.x / NUM_BLOCKS_WIDE;
         mNumBlocksHigh = size.y / blockSize;
-        
+
         // Load and scale all background images
         backgroundImages = new Bitmap[]{
                 BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1),
