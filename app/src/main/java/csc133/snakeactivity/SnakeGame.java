@@ -59,6 +59,26 @@ class SnakeGame extends SurfaceView implements Runnable {
     private ArrayList<GameObject> gameObjects;
     private Handler handler = new Handler();
     private boolean isSpawnScheduled = false;
+    private Bitmap[] backgroundImages;
+    private int backgroundIndex = 0;
+    private int applesEaten = 0;
+    private long updateInterval = 100;
+    private long namesDisplayStartTime = -1;
+    private static final long FADE_DURATION = 10000;
+    private boolean isNamesFading = false;
+    private int regularApplesEaten = 0;
+    private final int SPEED_BOOST_THRESHOLD = 5;
+
+
+
+
+
+    // Method to change background
+    private void changeBackground() {
+        backgroundIndex = (backgroundIndex + 1) % backgroundImages.length;
+        backgroundImage = backgroundImages[backgroundIndex];
+        postInvalidate();
+    }
 
     private Runnable spawnBadAppleRunnable = new Runnable() {
         @Override
@@ -74,6 +94,17 @@ class SnakeGame extends SurfaceView implements Runnable {
     };
 
 
+    private void initializeBackgrounds(Context context, Point size) {
+        backgroundImages = new Bitmap[]{
+                BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1),
+                BitmapFactory.decodeResource(context.getResources(), R.drawable.test1) // Assuming you have a second background
+                // Add additional backgrounds here
+        };
+
+        for (int i = 0; i < backgroundImages.length; i++) {
+            backgroundImages[i] = Bitmap.createScaledBitmap(backgroundImages[i], size.x, size.y, false);
+        }
+    }
 
 
     public SnakeGame(Context context, Point size) {
@@ -89,51 +120,57 @@ class SnakeGame extends SurfaceView implements Runnable {
     private void initializeGame(Context context, Point size){
         int blockSize = size.x / NUM_BLOCKS_WIDE;
         mNumBlocksHigh = size.y / blockSize;
-        backgroundImage = BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1);
-        backgroundImage = Bitmap.createScaledBitmap(backgroundImage, size.x, size.y, false);
+
+        // Initialize backgrounds
+        initializeBackgrounds(context, size); // This method will handle loading and scaling of background images
+        backgroundImage = backgroundImages[0]; // Set the initial background from the array
+
+        // Initialize game objects
         mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, location -> mSnake.isOccupied(location));
         mSnake = new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize);
-        // Assuming mSnake is already initialized and represents your Snake object
         mShark = new Shark(getContext(), size.x * 5 / NUM_BLOCKS_WIDE, size.x, size.y, mSnake);
-
-
     }
 
-    private void loadSounds(Context context){
+
+    private void loadSounds(Context context) {
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setUsage(AudioAttributes.USAGE_GAME) // Adjusted for game-specific sound usage
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build();
+
         mSP = new SoundPool.Builder()
                 .setMaxStreams(MAX_STREAMS)
                 .setAudioAttributes(audioAttributes)
                 .build();
+
+        AssetManager assetManager = context.getAssets();
         try {
-            AssetManager assetManager = context.getAssets();
-            AssetFileDescriptor descriptor;
-            descriptor = assetManager.openFd("get_apple.ogg");
-            mEat_ID = mSP.load(descriptor, 0);
+            AssetFileDescriptor descriptor = assetManager.openFd("get_apple.ogg");
+            mEat_ID = mSP.load(descriptor, 1); // Priority set to 1 for game sounds
             descriptor = assetManager.openFd("snake_death.ogg");
-            mCrash_ID = mSP.load(descriptor, 0);
+            mCrash_ID = mSP.load(descriptor, 1);
         } catch (IOException e) {
-            // Error handling
+            Log.e("SnakeGame", "Error loading sound effects", e);
         }
     }
 
-    private void saveHighScore(){
+
+    private void saveHighScore() {
         SharedPreferences prefs = getContext().getSharedPreferences("SnakeGame", Context.MODE_PRIVATE);
         int highScore = prefs.getInt("highScore", 0);
-        if(mScore > highScore) {
+
+        if (mScore > highScore) {
             SharedPreferences.Editor editor = prefs.edit();
             editor.putInt("highScore", mScore);
-            editor.apply();
+            editor.apply();  // Use apply() instead of commit() for asynchronous commit to disk
         }
     }
 
-    private int getHighScore(){
+    private int getHighScore() {
         SharedPreferences prefs = getContext().getSharedPreferences("SnakeGame", Context.MODE_PRIVATE);
-        return prefs.getInt("highScore", 0);
+        return prefs.getInt("highScore", 0);  // Returns 0 if "highScore" does not exist
     }
+
 
     private void initializeGameObjects(Typeface customTypeface) {
         mSurfaceHolder = getHolder();
@@ -185,59 +222,80 @@ class SnakeGame extends SurfaceView implements Runnable {
         while (iterator.hasNext()) {
             GameObject obj = iterator.next();
 
-            if (obj instanceof Snake && speedBoostUpdatesRemaining > 0) {
-                ((Snake) obj).move(true); // Move snake with speed boost if remaining
-            } else {
-                obj.update(); // Update all game objects normally
-            }
+            obj.update();  // Update all game objects
 
-
-            // Check for collision with Shark
-            if (obj instanceof Shark) {
-                Shark shark = (Shark) obj;
-                PointF sharkLocation = shark.getLocation();
-                int sharkWidth = shark.getBitmap().getWidth(); // Safely retrieve the shark's bitmap width
-                int sharkHeight = shark.getBitmap().getHeight(); // Safely retrieve the shark's bitmap height
-                if (mSnake.checkCollisionWithHead(sharkLocation, sharkWidth, sharkHeight)) {
-                    gameOver(); // Game over if the shark hits the snake's head
+            if (obj instanceof Snake) {
+                if (mSnake.detectDeath()) {
+                    gameOver();
                     return;
-                } else {
-                    int segmentsRemoved = mSnake.removeCollidedSegments(sharkLocation);
-                    if (segmentsRemoved > 0) {
-                        mScore -= segmentsRemoved; // Subtract the number of segments removed from the score
-                        mScore = Math.max(0, mScore); // Ensure the score does not go negative
-                    }
                 }
             }
 
-
-            // Check for eating an Apple
             if (obj instanceof Apple && mSnake.checkDinner(((Apple) obj).getLocation())) {
                 mApple.spawn();
                 mScore += 1;
                 mSP.play(mEat_ID, 1, 1, 0, 0, 1);
-                speedBoostUpdatesRemaining = 5;
+
+
+
+                // Apply speed boost every time the score increases by 5
+                if (mScore % 5 == 0) {
+                    increaseDifficulty();
+                }
+                // Apply speed boost every time the score increases by 5
+                if (mScore % 10 == 0) {
+                    changeBackground();
+                }
+
+
             }
 
-            // Check for BadApple effects
+            if (obj instanceof Shark) {
+                Shark shark = (Shark) obj;
+                if (mSnake.checkCollisionWithHead(shark.getLocation(), shark.getBitmap().getWidth(), shark.getBitmap().getHeight())) {
+                    gameOver();
+                    return;
+                } else {
+                    int segmentsRemoved = mSnake.removeCollidedSegments(shark.getLocation());
+                    if (segmentsRemoved > 0) {
+                        mScore -= segmentsRemoved;
+                        mScore = Math.max(0, mScore);
+                    }
+                }
+            }
+
             if (obj instanceof BadApple && mSnake.checkDinner(((BadApple) obj).getLocation())) {
                 int segmentsToRemove = Math.min(4, mSnake.segmentLocations.size() - 1);
                 mSnake.reduceLength(segmentsToRemove);
                 mSP.play(mCrash_ID, 1, 1, 0, 0, 1);
                 iterator.remove();
-                mScore -= 3; // Subtract the penalty for eating a bad apple
-                mScore = Math.max(0, mScore); // Ensure the score does not go negative
+                mScore -= 3;
+                mScore = Math.max(0, mScore);
             }
         }
 
-        if (speedBoostUpdatesRemaining > 0) {
-            speedBoostUpdatesRemaining--;
-        }
-
-        if (mSnake.detectDeath()) {
-            gameOver();
-        }
     }
+
+    private void increaseDifficulty() {
+        // Decrease update interval based on the score proportionally
+        int speedIncreaseFactor = mScore / 5;  // Increase factor for every 5 apples eaten
+        updateInterval = Math.max(100 - 10 * speedIncreaseFactor, 20);  // Cap minimum interval to 20ms
+
+        // Provide feedback that speed has increased
+        mCanvas.drawText("Speed boost!", size.x / 2, size.y / 2, mPaint);  // Visual feedback
+        mSP.play(mEat_ID, 1, 1, 1, 0, 1.5f);  // Auditory feedback with different sound settings
+    }
+
+    public boolean updateRequired() {
+        final long currentTime = System.currentTimeMillis();
+        if (mNextFrameTime <= currentTime) {
+            mNextFrameTime = currentTime + updateInterval;
+            return true;
+        }
+        return false;
+    }
+
+
 
 
 
@@ -254,16 +312,6 @@ class SnakeGame extends SurfaceView implements Runnable {
         BadApple.resetAll(badApples, gameObjects);
     }
 
-    public boolean updateRequired() {
-        final long TARGET_FPS = 10;
-        final long MILLIS_PER_SECOND = 1000;
-        if (mNextFrameTime <= System.currentTimeMillis()) {
-            mNextFrameTime = System.currentTimeMillis() + MILLIS_PER_SECOND / TARGET_FPS;
-            return true;
-        }
-        return false;
-    }
-
     private void drawGameObjects() {
         if (!mSurfaceHolder.getSurface().isValid()) {
             return;
@@ -273,7 +321,6 @@ class SnakeGame extends SurfaceView implements Runnable {
             return;
         }
         drawBackground();
-        drawGrid();
         drawScore();
         drawGameObjectsOnCanvas();
         drawDeveloperNames(mCanvas);
@@ -299,20 +346,6 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
-    private void drawGrid() {
-        int gridSize = 40;
-        float colWidth = mCanvas.getWidth() / (float) gridSize;
-        float rowHeight = mCanvas.getHeight() / (float) gridSize;
-        mPaint.setColor(Color.argb(255, 255, 255, 255));
-        mPaint.setStrokeWidth(1);
-        for (int col = 0; col < gridSize; col++) {
-            mCanvas.drawLine(col * colWidth, 0, col * colWidth, mCanvas.getHeight(), mPaint);
-        }
-        for (int row = 0; row < gridSize; row++) {
-            mCanvas.drawLine(0, row * rowHeight, mCanvas.getWidth(), row * rowHeight, mPaint);
-        }
-    }
-
     private void drawScore() {
         int highScore = getHighScore();
         mPaint.setColor(Color.argb(255, 255, 255, 255));
@@ -328,18 +361,42 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
     private void drawDeveloperNames(Canvas canvas) {
-        Paint textPaint = new Paint();
-        textPaint.setTextSize(40);
-        textPaint.setColor(Color.WHITE);
-        textPaint.setTextAlign(Paint.Align.RIGHT);
-        String[] names = {"Arjun Bhargava & Navid Baghaei", "Dagem Kebede & Rodrigo Guzman"};
-        int x = size.x - 20;
-        int y = size.y - 80;
-        for (String name : names) {
-            canvas.drawText(name, x, y, textPaint);
-            y += textPaint.getTextSize();
+        // Check if the fade has started, if not, initialize it
+        if (namesDisplayStartTime == -1) {
+            namesDisplayStartTime = System.currentTimeMillis();
+            isNamesFading = true;
+        }
+
+        // Calculate the elapsed time
+        long elapsedTime = System.currentTimeMillis() - namesDisplayStartTime;
+        if (elapsedTime > FADE_DURATION) {
+            isNamesFading = false; // Stop fading after the duration
+        } else {
+            // Calculate the alpha based on the elapsed time
+            int alpha = (int) (255 - (255 * elapsedTime / FADE_DURATION));
+            alpha = Math.max(alpha, 0); // Ensure alpha doesn't go below 0
+
+            Paint textPaint = new Paint();
+            textPaint.setTextSize(40);
+            textPaint.setColor(Color.WHITE);
+            textPaint.setAlpha(alpha); // Set the calculated alpha
+            textPaint.setTextAlign(Paint.Align.RIGHT);
+
+            String[] names = {"Arjun Bhargava & Navid Baghaei", "Dagem Kebede & Rodrigo Guzman"};
+            int x = size.x - 20;
+            int y = size.y - 80;
+            for (String name : names) {
+                canvas.drawText(name, x, y, textPaint);
+                y += textPaint.getTextSize();
+            }
+
+            // Ensure the canvas redraws to continue the fade
+            invalidate();
         }
     }
+
+
+
 
     private void drawPausedMessage() {
         if (mPaused && isGameStarted) {
@@ -437,9 +494,15 @@ class SnakeGame extends SurfaceView implements Runnable {
         mPaused = false;
         speedBoost = false;
         mPlaying = true;
+        regularApplesEaten = 0;  // Reset the count of regular apples eaten
+        updateInterval = 100;    // Reset the update interval to default
 
         // Reset and clear any lingering BadApples and prepare the game objects list
         BadApple.resetAll(badApples, gameObjects);
+
+        // Reset the background index for a new game
+        backgroundIndex = 0;
+        backgroundImage = backgroundImages[backgroundIndex];
 
         // Start or restart the game thread
         if (mThread == null || !mThread.isAlive()) {
@@ -457,7 +520,6 @@ class SnakeGame extends SurfaceView implements Runnable {
             isSpawnScheduled = true; // Set when scheduling
         }
     }
-
 
 
     public boolean isOccupied(Point location) {
