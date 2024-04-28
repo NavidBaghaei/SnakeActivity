@@ -55,19 +55,13 @@ public abstract class MoveCollide {
     }
 
     public boolean detectDeath() {
-        return !segmentLocations.isEmpty() && (detectWallCollision() || detectTailCollision());
+        return detectWallCollision() || detectTailCollision();
     }
 
-
     public boolean detectWallCollision() {
-        if (segmentLocations.isEmpty()) {
-            return false; // No collision if there are no segments
-        }
-
         Point head = segmentLocations.get(0);
         return head.x == -1 || head.x > mMoveRange.x || head.y == -1 || head.y > mMoveRange.y;
     }
-
 
     public boolean detectTailCollision() {
         Point head = segmentLocations.get(0);
