@@ -97,7 +97,7 @@ class SnakeGame extends SurfaceView implements Runnable {
     private void initializeBackgrounds(Context context, Point size) {
         backgroundImages = new Bitmap[]{
                 BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1),
-                BitmapFactory.decodeResource(context.getResources(), R.drawable.test1) // Assuming you have a second background
+                BitmapFactory.decodeResource(context.getResources(), R.drawable.stage2) // Assuming you have a second background
                 // Add additional backgrounds here
         };
 
