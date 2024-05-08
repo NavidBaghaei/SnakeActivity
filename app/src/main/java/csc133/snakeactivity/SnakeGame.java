@@ -68,18 +68,12 @@ class SnakeGame extends SurfaceView implements Runnable {
     private boolean isNamesFading = false;
     private int regularApplesEaten = 0;
     private final int SPEED_BOOST_THRESHOLD = 5;
-
-
-
-
-
     // Method to change background
     private void changeBackground() {
         backgroundIndex = (backgroundIndex + 1) % backgroundImages.length;
         backgroundImage = backgroundImages[backgroundIndex];
         postInvalidate();
     }
-
     private Runnable spawnBadAppleRunnable = new Runnable() {
         @Override
         public void run() {
@@ -92,8 +86,6 @@ class SnakeGame extends SurfaceView implements Runnable {
             }
         }
     };
-
-
     private void initializeBackgrounds(Context context, Point size) {
         backgroundImages = new Bitmap[]{
                 BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1),
@@ -105,17 +97,28 @@ class SnakeGame extends SurfaceView implements Runnable {
             backgroundImages[i] = Bitmap.createScaledBitmap(backgroundImages[i], size.x, size.y, false);
         }
     }
+    private boolean shouldDrawSpeedBoost = false;
+    private long speedBoostDisplayStartTime;
+    private static final long SPEED_BOOST_DISPLAY_DURATION = 5000;
 
+    private AudioContext audioContext;
 
     public SnakeGame(Context context, Point size) {
         super(context);
         this.size = size;
         Typeface customTypeface = ResourcesCompat.getFont(context, R.font.workbench);
-        loadSounds(context);
         initializeGame(context, size);
-        badApples = new ArrayList<>(); // Initialization of the badApples list
+        this.audioContext = new AudioContext(new ExtendedAudioStrategy());
+        audioContext.loadSounds(context);
+        // Start background music only here if not already playing
+        if (!audioContext.isMusicPlaying()) {
+            audioContext.startBackgroundMusic();
+            setBackgroundMusicVolume();
+        }
+        badApples = new ArrayList<>();
         initializeGameObjects(customTypeface);
     }
+
 
     private void initializeGame(Context context, Point size){
         int blockSize = size.x / NUM_BLOCKS_WIDE;
@@ -130,30 +133,6 @@ class SnakeGame extends SurfaceView implements Runnable {
         mSnake = new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize);
         mShark = new Shark(getContext(), size.x * 5 / NUM_BLOCKS_WIDE, size.x, size.y, mSnake);
     }
-
-
-    private void loadSounds(Context context) {
-        AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_GAME) // Adjusted for game-specific sound usage
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build();
-
-        mSP = new SoundPool.Builder()
-                .setMaxStreams(MAX_STREAMS)
-                .setAudioAttributes(audioAttributes)
-                .build();
-
-        AssetManager assetManager = context.getAssets();
-        try {
-            AssetFileDescriptor descriptor = assetManager.openFd("get_apple.ogg");
-            mEat_ID = mSP.load(descriptor, 1); // Priority set to 1 for game sounds
-            descriptor = assetManager.openFd("snake_death.ogg");
-            mCrash_ID = mSP.load(descriptor, 1);
-        } catch (IOException e) {
-            Log.e("SnakeGame", "Error loading sound effects", e);
-        }
-    }
-
 
     private void saveHighScore() {
         SharedPreferences prefs = getContext().getSharedPreferences("SnakeGame", Context.MODE_PRIVATE);
@@ -207,12 +186,23 @@ class SnakeGame extends SurfaceView implements Runnable {
         gameObjects.add(badApple);
     }
 
-    @Override
     public void run() {
         while (mPlaying) {
-            if (!mPaused && updateRequired()) {
-                updateGameObjects();
-                drawGameObjects();
+            if (!mPaused) {
+                if (updateRequired()) {
+                    updateGameObjects();
+                    drawGameObjects();
+                    resumeMusic();
+                }
+            }
+            if (mPaused) {
+                pauseMusic();
+            }
+
+            try {
+                Thread.sleep(16); // It's usually a good idea to give some time back to the system.
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -234,9 +224,7 @@ class SnakeGame extends SurfaceView implements Runnable {
             if (obj instanceof Apple && mSnake.checkDinner(((Apple) obj).getLocation())) {
                 mApple.spawn();
                 mScore += 1;
-                mSP.play(mEat_ID, 1, 1, 0, 0, 1);
-
-
+                audioContext.playEatSound(); // Play eat sound using AudioContext
 
                 // Apply speed boost every time the score increases by 5
                 if (mScore % 5 == 0) {
@@ -246,8 +234,6 @@ class SnakeGame extends SurfaceView implements Runnable {
                 if (mScore % 10 == 0) {
                     changeBackground();
                 }
-
-
             }
 
             if (obj instanceof Shark) {
@@ -267,14 +253,14 @@ class SnakeGame extends SurfaceView implements Runnable {
             if (obj instanceof BadApple && mSnake.checkDinner(((BadApple) obj).getLocation())) {
                 int segmentsToRemove = Math.min(4, mSnake.segmentLocations.size() - 1);
                 mSnake.reduceLength(segmentsToRemove);
-                mSP.play(mCrash_ID, 1, 1, 0, 0, 1);
+                audioContext.playBadEatSound();
                 iterator.remove();
                 mScore -= 3;
                 mScore = Math.max(0, mScore);
             }
         }
-
     }
+
 
     private void increaseDifficulty() {
         // Decrease update interval based on the score proportionally
@@ -282,8 +268,9 @@ class SnakeGame extends SurfaceView implements Runnable {
         updateInterval = Math.max(100 - 10 * speedIncreaseFactor, 20);  // Cap minimum interval to 20ms
 
         // Provide feedback that speed has increased
-        mCanvas.drawText("Speed boost!", size.x / 2, size.y / 2, mPaint);  // Visual feedback
-        mSP.play(mEat_ID, 1, 1, 1, 0, 1.5f);  // Auditory feedback with different sound settings
+        shouldDrawSpeedBoost = true; // Set a flag to draw the speed boost text on the next canvas draw cycle
+
+        audioContext.playSpeedBoostSound(); // This assumes you might want to use the same eat sound but with different parameters
     }
 
     public boolean updateRequired() {
@@ -296,17 +283,13 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
 
-
-
-
-
-
-
     private void gameOver() {
-        mSP.play(mCrash_ID, 1, 1, 0, 0, 1);
+        audioContext.playCrashSound();
+        audioContext.stopBackgroundMusic();
         mPaused = true;
         isGameStarted = false;
         speedBoostUpdatesRemaining = 0;
+        stopSounds();
         saveHighScore();
         Log.d("SnakeGame", "Game Over!");
         BadApple.resetAll(badApples, gameObjects);
@@ -358,6 +341,20 @@ class SnakeGame extends SurfaceView implements Runnable {
         for (GameObject obj : gameObjects) {
             obj.draw(mCanvas, mPaint);
         }
+
+        if (shouldDrawSpeedBoost) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - speedBoostDisplayStartTime < SPEED_BOOST_DISPLAY_DURATION) {
+                mPaint.setTextSize(40);
+                mPaint.setColor(Color.RED);  // Make sure the color stands out
+                float x = size.x / 2 - mPaint.measureText("Speed boost!") / 2;
+                float y = size.y / 2; // Center text vertically
+                mCanvas.drawText("Speed boost!", x, y, mPaint);
+            } else {
+               shouldDrawSpeedBoost = false;
+            }
+            postInvalidate(); // Trigger redraw
+        }
     }
 
     private void drawDeveloperNames(Canvas canvas) {
@@ -394,8 +391,6 @@ class SnakeGame extends SurfaceView implements Runnable {
             invalidate();
         }
     }
-
-
 
 
     private void drawPausedMessage() {
@@ -446,9 +441,8 @@ class SnakeGame extends SurfaceView implements Runnable {
     public void pause() {
         mPaused = true;
         handler.removeCallbacks(spawnBadAppleRunnable);
-        isSpawnScheduled = false; // Reset the flag when game is paused
+        isSpawnScheduled = false; // Make sure to manage all scheduled tasks or threads
     }
-
 
     public void resume() {
         mPaused = false;
@@ -470,6 +464,14 @@ class SnakeGame extends SurfaceView implements Runnable {
     private void togglePause() {
         mPaused = !mPaused;
         pauseButtonText = mPaused ? "Resume" : "Pause";
+    }
+
+    protected void pauseMusic(){
+        audioContext.stopBackgroundMusic();
+    }
+
+    protected void resumeMusic(){
+        audioContext.startBackgroundMusic();
     }
 
     private void startNewGame() {
@@ -512,6 +514,10 @@ class SnakeGame extends SurfaceView implements Runnable {
 
         // Schedule the first Bad Apple spawn only if the game is not paused
         scheduleNextBadAppleSpawn();
+
+        if (!audioContext.isMusicPlaying()) {
+            audioContext.startBackgroundMusic();
+        }
     }
 
     private void scheduleNextBadAppleSpawn() {
@@ -526,5 +532,18 @@ class SnakeGame extends SurfaceView implements Runnable {
         return mSnake.isOccupied(location);
     }
 
+    private void onPowerUp() {
+        audioContext.playPowerUpSound();
+        // Implement additional power-up logic here
+    }
 
+    private void stopSounds() {
+        //STOP CALLS FOR ALL SOUNDS GO HERE. CALLED WHEN GAME ENDS.
+        //ONLY NEEDED FOR SOUNDS THAT ARE LONGER
+        audioContext.stopSharkSwimSound();
+    }
+
+    private void setBackgroundMusicVolume(){
+        audioContext.setMusicVolume(0.6F);
+    }
 }

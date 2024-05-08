@@ -85,8 +85,6 @@ class Shark implements GameObject {
     }
 
 
-
-
     public void spawn() {
         float minY = 50; // Slightly away from the very top and bottom
         float maxY = screenHeight - mBitmapShark.getHeight() - 50;
@@ -103,10 +101,8 @@ class Shark implements GameObject {
         location.set(x, y);
         direction.set(spawnLeft ? 1 : -1, 0);
         isMoving = true;
+        AudioContext.playSharkSwimSound();
     }
-
-
-
 
     public boolean checkCollision(Snake snake) {
         if (!isMoving) {

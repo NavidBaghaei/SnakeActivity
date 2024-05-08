@@ -136,25 +136,6 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
         }
     }
 
-    public boolean checkCollisionWithBody(PointF sharkPoint) {
-        for (int i = 1; i < segmentLocations.size(); i++) {
-            Point part = segmentLocations.get(i);
-            if (sharkPoint.x >= part.x * mSegmentSize && sharkPoint.x <= (part.x + 1) * mSegmentSize &&
-                    sharkPoint.y >= part.y * mSegmentSize && sharkPoint.y <= (part.y + 1) * mSegmentSize) {
-                removeSegmentsFrom(i);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void removeSegmentsFrom(int index) {
-        int segmentsToRemove = segmentLocations.size() - index;
-        segmentLocations.subList(index, segmentLocations.size()).clear();
-        mScore -= segmentsToRemove; // Decrement score by the number of removed segments
-        if (mScore < 0) mScore = 0; // Ensure the score does not go negative
-    }
-
     public int removeCollidedSegments(PointF sharkPoint) {
         int segmentsRemoved = 0;
         for (int i = 1; i < segmentLocations.size(); i++) {
@@ -164,21 +145,13 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
                 segmentsRemoved = segmentLocations.size() - i;
                 segmentLocations.subList(i, segmentLocations.size()).clear(); // Remove from collision point to end of tail
                 mScore -= segmentsRemoved; // Decrease score based on the number of segments removed
+                AudioContext.playSharkBiteSound();
                 break;
             }
         }
         return segmentsRemoved;
     }
 
-
-    private void updateScore(int value) {
-        mScore += value;
-        if (mScore < 0) mScore = 0; // Ensure the score does not go negative
-    }
-
-    public int getScore() {
-        return mScore;
-    }
 
     @Override
     public void draw(Canvas canvas, Paint paint) {
