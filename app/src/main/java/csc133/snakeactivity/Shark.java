@@ -55,7 +55,7 @@ class Shark implements GameObject {
 
         // Despawn the shark if it goes off the screen
         if (isMoving) {
-            float nextX = location.x + direction.x * 10;
+            float nextX = location.x + direction.x * 40;
             if ((spawnLeft && nextX > screenWidth) || (!spawnLeft && nextX + mBitmapShark.getWidth() < 0)) {
                 isMoving = false;
                 lastDeactivatedTime = currentTime;
