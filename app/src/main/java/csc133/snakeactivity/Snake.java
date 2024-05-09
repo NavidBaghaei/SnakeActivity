@@ -20,8 +20,12 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
     private int halfWayPoint;
     private int mScore; // Track the score
     private int segmentSize;
+    private Context context;
+    private boolean isInvincible = false;
+    private long invincibilityEndTime = 0;
 
     Snake(Context context, Point mr, int ss) {
+        this.context = context;
         segmentLocations = new ArrayList<>();
         mSegmentSize = ss;
         mMoveRange = mr;
@@ -64,7 +68,13 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
 
     @Override
     public void update() {
+        // Call the move method to handle the movement of the snake
         move();
+
+        // Check if the snake is currently invincible and if the invincibility period has expired
+        if (isInvincible && System.currentTimeMillis() > invincibilityEndTime) {
+            isInvincible = false;  // Reset invincibility
+        }
     }
 
     public void updateHeading(Heading newHeading) {
@@ -72,6 +82,22 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
             this.heading = newHeading;
         }
     }
+
+    // Method to check if the snake has encountered the Rainbow Worm
+    public boolean checkRainbowWorm(Point wormLocation) {
+        if (segmentLocations.isEmpty() || wormLocation == null) {
+            return false;
+        }
+
+        Point head = segmentLocations.get(0);
+        if (head.equals(wormLocation)) {
+            activateInvincibility(10000); // Activate invincibility for 10 seconds
+            return true;
+        }
+        return false;
+    }
+
+
 
     boolean checkDinner(Point appleLocation) {
         // Check if there are any segments before accessing them
@@ -219,9 +245,29 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
             }
         }
     }
-    public int getSegmentSize() {
-        return this.segmentSize;
+    public void activateInvincibility(long duration) {
+        isInvincible = true;
+        invincibilityEndTime = System.currentTimeMillis() + duration;
     }
+
+    // Getter for the context
+    public Context getContext() {
+        return this.context;
+    }
+
+    // Getter for the move range
+    public Point getMoveRange() {
+        return this.mMoveRange;
+    }
+
+    // Getter for the segment size
+    public int getSegmentSize() {
+        return this.mSegmentSize;
+    }
+    public boolean isInvincible() {
+        return isInvincible;
+    }
+
     public Point getHeadLocation() {
         if (!segmentLocations.isEmpty()) {
             return new Point(segmentLocations.get(0));

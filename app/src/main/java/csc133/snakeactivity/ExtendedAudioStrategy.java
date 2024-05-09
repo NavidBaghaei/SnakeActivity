@@ -78,7 +78,7 @@ public class ExtendedAudioStrategy implements Audio {
 
 
     private void loadPowerUpMusic(Context context) throws IOException {
-        AssetFileDescriptor descriptor = context.getAssets().openFd("power_up.mp3");
+        AssetFileDescriptor descriptor = context.getAssets().openFd("power_up.ogg");
         powerUpMusic = new MediaPlayer();
         powerUpMusic.setDataSource(descriptor.getFileDescriptor(), descriptor.getStartOffset(), descriptor.getLength());
         powerUpMusic.prepare();

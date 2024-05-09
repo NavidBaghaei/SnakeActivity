@@ -68,6 +68,8 @@ class SnakeGame extends SurfaceView implements Runnable {
     private boolean isNamesFading = false;
     private int regularApplesEaten = 0;
     private final int SPEED_BOOST_THRESHOLD = 5;
+    private RainbowWorm rainbowWorm;
+
     // Method to change background
     private void changeBackground() {
         backgroundIndex = (backgroundIndex + 1) % backgroundImages.length;
@@ -86,6 +88,18 @@ class SnakeGame extends SurfaceView implements Runnable {
             }
         }
     };
+
+    private Runnable spawnRainbowWormRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!mPaused) {
+                rainbowWorm.spawn();
+                handler.postDelayed(this, 10000 + new Random().nextInt(10000)); // Adjust timing as needed
+            }
+        }
+    };
+
+
     private void initializeBackgrounds(Context context, Point size) {
         backgroundImages = new Bitmap[]{
                 BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1),
@@ -132,6 +146,9 @@ class SnakeGame extends SurfaceView implements Runnable {
         mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, location -> mSnake.isOccupied(location));
         mSnake = new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize);
         mShark = new Shark(getContext(), size.x * 5 / NUM_BLOCKS_WIDE, size.x, size.y, mSnake);
+        rainbowWorm = new RainbowWorm(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, this::isOccupied);
+
+
     }
 
     private void saveHighScore() {
@@ -161,7 +178,9 @@ class SnakeGame extends SurfaceView implements Runnable {
         gameObjects.add(mSnake);
         gameObjects.add(mApple);
         gameObjects.add(mShark);
+        gameObjects.add(rainbowWorm);
         handler.postDelayed(spawnBadAppleRunnable, 30000 + new Random().nextInt(15000));
+        handler.postDelayed(spawnRainbowWormRunnable, 30000 + new Random().nextInt(15000)); // Adjust initial delay as needed
         textPaint = new Paint();
         textPaint.setTextSize(40);
         textPaint.setColor(Color.WHITE);
@@ -215,7 +234,7 @@ class SnakeGame extends SurfaceView implements Runnable {
             obj.update();  // Update all game objects
 
             if (obj instanceof Snake) {
-                if (mSnake.detectDeath()) {
+                if (mSnake.detectDeath() && !mSnake.isInvincible()) {
                     gameOver();
                     return;
                 }
@@ -224,13 +243,13 @@ class SnakeGame extends SurfaceView implements Runnable {
             if (obj instanceof Apple && mSnake.checkDinner(((Apple) obj).getLocation())) {
                 mApple.spawn();
                 mScore += 1;
-                audioContext.playEatSound(); // Play eat sound using AudioContext
+                audioContext.playEatSound();  // Play eat sound using AudioContext
 
                 // Apply speed boost every time the score increases by 5
                 if (mScore % 5 == 0) {
                     increaseDifficulty();
                 }
-                // Apply speed boost every time the score increases by 5
+                // Apply background change every time the score increases by 10
                 if (mScore % 10 == 0) {
                     changeBackground();
                 }
@@ -238,7 +257,7 @@ class SnakeGame extends SurfaceView implements Runnable {
 
             if (obj instanceof Shark) {
                 Shark shark = (Shark) obj;
-                if (mSnake.checkCollisionWithHead(shark.getLocation(), shark.getBitmap().getWidth(), shark.getBitmap().getHeight())) {
+                if (!mSnake.isInvincible() && mSnake.checkCollisionWithHead(shark.getLocation(), shark.getBitmap().getWidth(), shark.getBitmap().getHeight())) {
                     gameOver();
                     return;
                 } else {
@@ -252,14 +271,25 @@ class SnakeGame extends SurfaceView implements Runnable {
 
             if (obj instanceof BadApple && mSnake.checkDinner(((BadApple) obj).getLocation())) {
                 int segmentsToRemove = Math.min(4, mSnake.segmentLocations.size() - 1);
-                mSnake.reduceLength(segmentsToRemove);
-                audioContext.playBadEatSound();
-                iterator.remove();
-                mScore -= 3;
+                if (!mSnake.isInvincible()) {
+                    mSnake.reduceLength(segmentsToRemove);
+                    mScore -= 3; // Apply penalty if not invincible
+                }
+                iterator.remove(); // Remove the bad apple regardless
                 mScore = Math.max(0, mScore);
+                audioContext.playBadEatSound();
+            }
+
+            if (obj instanceof RainbowWorm) {
+                RainbowWorm worm = (RainbowWorm) obj;
+                if (mSnake.checkRainbowWorm(worm.getLocation())) {
+                    iterator.remove(); // Remove or respawn the Rainbow Worm after it's consumed
+                    worm.delayedSpawn(30000); // Respawn after a delay if desired
+                }
             }
         }
     }
+
 
 
     private void increaseDifficulty() {
@@ -306,13 +336,17 @@ class SnakeGame extends SurfaceView implements Runnable {
         drawBackground();
         drawScore();
         drawGameObjectsOnCanvas();
+        if (rainbowWorm != null) {
+            rainbowWorm.draw(mCanvas, mPaint);  // Correct placement to ensure it gets drawn
+        }
         drawDeveloperNames(mCanvas);
         drawPausedMessage();
         drawTapToPlayMessage();
         drawPauseButton();
         drawShark(mCanvas);
-        mSurfaceHolder.unlockCanvasAndPost(mCanvas);
+        mSurfaceHolder.unlockCanvasAndPost(mCanvas);  // Always ensure this is the last call
     }
+
 
     private void drawBackground() {
         mCanvas.drawColor(Color.argb(255, 26, 128, 182));
@@ -488,7 +522,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         gameObjects.add(mSnake);
         gameObjects.add(mApple);
         gameObjects.add(mShark);
-
+        rainbowWorm.delayedSpawn(5000); // 5000 ms delay or adjust as needed
         // Reset game state variables
         mScore = 0;
         mNextFrameTime = System.currentTimeMillis();
