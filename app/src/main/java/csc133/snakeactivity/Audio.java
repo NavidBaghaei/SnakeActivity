@@ -8,7 +8,8 @@ public interface Audio {
     void playCrashSound();
     void startBackgroundMusic();
     void stopBackgroundMusic();
-    void playPowerUpSound();
+    void playPowerUpMusic();
+    void stopPowerUpMusic();
     boolean isMusicPlaying();
     void setMusicVolume(float volume);
     void playSpeedBoostSound();
@@ -16,5 +17,6 @@ public interface Audio {
     void playSharkSwimSound();
     void stopSharkSwimSound();
     void playSharkBiteSound();
+    void playSharkDeathSound();
 }
 

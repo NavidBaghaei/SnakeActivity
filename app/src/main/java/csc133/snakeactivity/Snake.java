@@ -61,7 +61,6 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
         mScore = 0;
     }
 
-
     @Override
     public void update() {
         move();
@@ -71,6 +70,15 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
         if (Math.abs(newHeading.ordinal() - this.heading.ordinal()) % 2 == 1) {
             this.heading = newHeading;
         }
+    }
+
+    boolean checkSuperAppleDinner(Point superAppleLocation) {
+        if (segmentLocations.isEmpty()) {
+            return false; // Return false if there are no segments to check against
+        }
+
+        Point head = segmentLocations.get(0); // Retrieve the head of the snake
+        return head.equals(superAppleLocation); // Check if the head is at the same location as the SuperApple
     }
 
     boolean checkDinner(Point appleLocation) {

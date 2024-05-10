@@ -21,6 +21,7 @@ public class ExtendedAudioStrategy implements Audio {
     private int sharkSwimSoundID;
     private int sharkSwimStreamId = 0;
     private int sharkBiteSoundID;
+   private int sharkDeathSoundID;
 
     @Override
     public void loadSounds(Context context) {
@@ -49,6 +50,8 @@ public class ExtendedAudioStrategy implements Audio {
             sharkSwimSoundID = soundPool.load(descriptor, 1);
             descriptor = assetManager.openFd("shark_bite.ogg");
             sharkBiteSoundID = soundPool.load(descriptor, 1);
+            descriptor = assetManager.openFd("shark_death.ogg");
+            sharkDeathSoundID = soundPool.load(descriptor, 1);
             loadBackgroundMusic(context);
             loadPowerUpMusic(context);
         } catch (IOException e) {
@@ -78,7 +81,7 @@ public class ExtendedAudioStrategy implements Audio {
 
 
     private void loadPowerUpMusic(Context context) throws IOException {
-        AssetFileDescriptor descriptor = context.getAssets().openFd("power_up.mp3");
+        AssetFileDescriptor descriptor = context.getAssets().openFd("power_up.ogg");
         powerUpMusic = new MediaPlayer();
         powerUpMusic.setDataSource(descriptor.getFileDescriptor(), descriptor.getStartOffset(), descriptor.getLength());
         powerUpMusic.prepare();
@@ -106,7 +109,7 @@ public class ExtendedAudioStrategy implements Audio {
     public void playSharkSwimSound() {
         if (soundPool != null && sharkSwimSoundID != 0) {
             // Store the stream ID so it can be stopped later
-            sharkSwimStreamId = soundPool.play(sharkSwimSoundID, 1, 1, 0, 1, 1);
+            sharkSwimStreamId = soundPool.play(sharkSwimSoundID, 0.8F, 0.8F, 0, 1, 1);
         } else {
             Log.e("ExtendedAudioStrategy", "SoundPool or sharkSwimSoundID not initialized");
         }
@@ -122,6 +125,11 @@ public class ExtendedAudioStrategy implements Audio {
     @Override
     public void playSharkBiteSound() {
         soundPool.play(sharkBiteSoundID, 1, 1, 0, 0, 1);
+    }
+
+    @Override
+    public void playSharkDeathSound() {
+            soundPool.play(sharkDeathSoundID, 1, 1, 0, 0, 1);
     }
 
     @Override
@@ -144,13 +152,21 @@ public class ExtendedAudioStrategy implements Audio {
         }
     }
     @Override
-    public void playPowerUpSound() {
+    public void playPowerUpMusic() {
         if (powerUpMusic != null) {
             stopBackgroundMusic();  // Stop background music
             powerUpMusic.start();   // Start playing power-up sound
-            powerUpMusic.setOnCompletionListener(mp -> startBackgroundMusic()); // Resume background music after power-up sound finishes
         }
     }
+
+    @Override
+    public void stopPowerUpMusic() {
+        if (powerUpMusic != null && powerUpMusic.isPlaying()) {
+            powerUpMusic.pause();  // Pause the playback
+            powerUpMusic.seekTo(0);  // Optional: reset to start of the track
+        }
+    }
+
     public boolean isMusicPlaying() {
         return (backgroundMusic != null && backgroundMusic.isPlaying());
     }
