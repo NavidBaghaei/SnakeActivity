@@ -10,85 +10,103 @@ import java.util.Random;
 import android.util.Log;
 
 public class SuperApple implements GameObject {
-
     private Point location = new Point();
+    private Point velocity = new Point(1, 1); // Manageable velocity
+    private int updateFrequency = 2;
+    private int updateCounter = 0;
     private Point mSpawnRange;
     private int mSize;
     private Bitmap mBitmapSuperApple;
     private SpaceChecker spaceChecker;
-    private long lastEatenTimestamp; // Timestamp when the SuperApple was last eaten
-    private long lastSpawnTime; // Time when the SuperApple was last spawned
-    private long respawnDelay = 10000; // Respawn delay in milliseconds
-    private long initialSpawnDelay = 15000; // Initial delay before first spawn
-    private boolean isInitiallySpawned = false; // Flag to check if initially spawned
+    private long lastEatenTimestamp;
+    private long lastSpawnTime;
+    private long visibleDuration = 10000; // 10 seconds visibility
+    private long visibleStartTime; // Time when the apple became visible
+    private long respawnDelay = 65000;
+    private long initialSpawnDelay = 30000;
+    private static boolean isSpawned;
+    private static boolean isVisible;
 
     public SuperApple(Context context, Point spawnRange, int size, SpaceChecker spaceChecker) {
         mSpawnRange = spawnRange;
         mSize = size;
         this.spaceChecker = spaceChecker;
-
-        // Load and scale the Super Apple bitmap
         mBitmapSuperApple = BitmapFactory.decodeResource(context.getResources(), R.drawable.super_apple);
         mBitmapSuperApple = Bitmap.createScaledBitmap(mBitmapSuperApple, mSize, mSize, false);
-
-        lastSpawnTime = System.currentTimeMillis(); // Set the initial spawn timer
+        reset();
     }
 
     public void spawn() {
         long currentTime = System.currentTimeMillis();
+        if (currentTime - lastSpawnTime >= initialSpawnDelay && !isSpawned) {
+            do {
+                location.x = new Random().nextInt(mSpawnRange.x);
+                location.y = new Random().nextInt(mSpawnRange.y);
+            } while (spaceChecker.isOccupied(location));
 
-        // Logging for debugging
-        Log.d("SuperApple", "Attempting to spawn: isInitiallySpawned = " + isInitiallySpawned);
-
-        // Check for initial spawn delay
-        if (!isInitiallySpawned && currentTime - lastSpawnTime < initialSpawnDelay) {
-            Log.d("SuperApple", "Initial spawn delay not yet passed.");
-            return; // Do not spawn if initial delay has not passed
+            lastSpawnTime = currentTime;
+            visibleStartTime = currentTime;
+            isSpawned = true;
+            isVisible = true;
+            Log.d("SuperApple", "SuperApple spawned at (" + location.x + ", " + location.y + ")");
         }
-
-        // Check for respawn delay
-        if (isInitiallySpawned && currentTime - lastEatenTimestamp < respawnDelay) {
-            Log.d("SuperApple", "Respawn delay not yet passed.");
-            return; // Do not respawn if respawn delay has not passed
-        }
-
-        // Generate a new random location that is not occupied
-        Random random = new Random();
-        do {
-            location.x = random.nextInt(mSpawnRange.x);
-            location.y = random.nextInt(mSpawnRange.y);
-        } while (spaceChecker.isOccupied(location));
-
-        // Reset the appropriate timestamps and state flags
-        if (!isInitiallySpawned) {
-            lastSpawnTime = currentTime; // Update lastSpawnTime on first spawn
-        }
-        lastEatenTimestamp = currentTime; // Update to current time to manage respawn delay
-        isInitiallySpawned = true; // Mark as spawned at least once
-
-        // Confirm spawning for debugging
-        Log.d("SuperApple", "SuperApple spawned at (" + location.x + ", " + location.y + ")");
     }
-
 
     @Override
     public void draw(Canvas canvas, Paint paint) {
-        long currentTime = System.currentTimeMillis();
-        // Only draw if the appropriate delay has passed
-        if ((isInitiallySpawned && currentTime - lastEatenTimestamp >= respawnDelay) ||
-                (!isInitiallySpawned && currentTime - lastSpawnTime >= initialSpawnDelay)) {
+        if (isVisible && isSpawned) {
             canvas.drawBitmap(mBitmapSuperApple, location.x * mSize, location.y * mSize, paint);
         }
     }
 
     @Override
     public void update() {
-        // Typically, no dynamic updates are needed unless there are time-based effects
+        if (isSpawned) {
+            long currentTime = System.currentTimeMillis();
+
+            if (currentTime - visibleStartTime > visibleDuration) {
+                isVisible = false;
+                isSpawned = false;
+            } else {
+                updateCounter++;
+                if (updateCounter >= updateFrequency) {
+                    // Update position based on velocity
+                    location.x += velocity.x;
+                    location.y += velocity.y;
+
+                    // Boundary checks
+                    if (location.x <= 0 || location.x >= mSpawnRange.x - 1) {
+                        velocity.x = -velocity.x;
+                        location.x = Math.max(0, Math.min(location.x, mSpawnRange.x - 1)); // Prevent sticking
+                    }
+                    if (location.y <= 0 || location.y >= mSpawnRange.y - 1) {
+                        velocity.y = -velocity.y;
+                        location.y = Math.max(0, Math.min(location.y, mSpawnRange.y - 1)); // Prevent sticking
+                    }
+
+                    updateCounter = 0;
+                }
+            }
+        }
     }
 
     public void markAsEaten() {
-        lastEatenTimestamp = System.currentTimeMillis(); // Record the time it was eaten
-        isInitiallySpawned = false; // Reset this flag to manage the respawn correctly
+        lastEatenTimestamp = System.currentTimeMillis();
+        isSpawned = false;
+        isVisible = false;
+    }
+
+    public void reset() {
+        isSpawned = false;
+        isVisible = false;
+        lastSpawnTime = System.currentTimeMillis() - initialSpawnDelay;
+        lastEatenTimestamp = System.currentTimeMillis();
+    }
+
+    public static void gameOver() {
+        isSpawned = false;
+        isVisible = false;
+        Log.d("SuperApple", "Game Over: SuperApple is reset.");
     }
 
     public Point getLocation() {
@@ -96,6 +114,6 @@ public class SuperApple implements GameObject {
     }
 
     public long getRespawnDelay() {
-        return respawnDelay; // Accessor for the respawn delay
+        return respawnDelay;
     }
 }

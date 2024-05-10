@@ -74,6 +74,7 @@ class Shark implements GameObject {
 
     public void reset() {
         isMoving = false;
+        AudioContext.stopSharkSwimSound(); //Stop shark audio
         // Reset the shark's position to a valid position off-screen
         if (spawnLeft) {
             location.x = -mBitmapShark.getWidth();

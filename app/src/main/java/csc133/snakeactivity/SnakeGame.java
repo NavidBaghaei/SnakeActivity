@@ -86,7 +86,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         public void run() {
             if (!mPaused) {
                 spawnBadApple();
-                handler.postDelayed(this, 10000 + new Random().nextInt(10000));
+                handler.postDelayed(this, 10000 + new Random().nextInt(5000));
                 isSpawnScheduled = true; // Mark as scheduled
             } else {
                 isSpawnScheduled = false; // Clear the flag if paused or finished
@@ -252,6 +252,7 @@ class SnakeGame extends SurfaceView implements Runnable {
                 }
             } else {
                 pauseMusic(); // Pause the music when the game is paused
+                stopSounds();
             }
 
             // Sleep the thread to control the game loop timing
@@ -299,16 +300,12 @@ class SnakeGame extends SurfaceView implements Runnable {
                 Shark shark = (Shark) obj;
                 if (mSnake.checkCollisionWithHead(shark.getLocation(), shark.getBitmap().getWidth(), shark.getBitmap().getHeight())) {
                     if (isPowerUpActive) {
-                        // If power-up is active, remove the Shark instead of ending the game
-
-                        audioContext.playCrashSound();  // Play a sound indicating the Shark has been defeated
+                        audioContext.playSharkDeathSound();  // Play a sound indicating the Shark has been defeated
                         mShark.reset();
-                         // Remove Shark from game objects
                     } else {
-                        // Normal behavior when power-up is not active
                         int segmentsRemoved = mSnake.removeCollidedSegments(shark.getLocation());
                         if (segmentsRemoved > 0) {
-                            mScore -= segmentsRemoved;  // Reduce score based on segments removed
+                            mScore -= segmentsRemoved;
                             mScore = Math.max(0, mScore);  // Ensure score does not go negative
                         }
                         gameOver();
@@ -320,45 +317,38 @@ class SnakeGame extends SurfaceView implements Runnable {
             // Interaction with BadApple
             if (obj instanceof BadApple && mSnake.checkDinner(((BadApple) obj).getLocation())) {
                 if (isPowerUpActive) {
-                    // If power-up is active, consume BadApple with no penalty
                     mScore += 1;
                     audioContext.playEatSound(); // Play a sound indicating a successful eat
                 } else {
-                    // Normal behavior when power-up is not active
                     int segmentsToRemove = Math.min(4, mSnake.segmentLocations.size() - 1);
-                    mSnake.reduceLength(segmentsToRemove); // Penalize snake by reducing its length
-                    audioContext.playBadEatSound(); // Play the sound for consuming a bad apple
+                    mSnake.reduceLength(segmentsToRemove);
                     mScore -= 3;
                     mScore = Math.max(0, mScore);
+                    audioContext.playBadEatSound(); // Play the sound for consuming a bad apple
                 }
-                iterator.remove(); // Remove BadApple from game objects regardless of power-up state
+                iterator.remove(); // Correct way to remove items during iteration
             }
-
 
             if (obj instanceof SuperApple && mSnake.checkSuperAppleDinner(((SuperApple) obj).getLocation())) {
                 Log.d("SuperApple", "Eaten at: " + System.currentTimeMillis());
                 ((SuperApple) obj).markAsEaten();
                 audioContext.playEatSound(); // Play a sound effect when SuperApple is eaten
-                iterator.remove(); // Remove the SuperApple from the game objects list only when eaten
+                iterator.remove(); // Correct way to remove items during iteration
 
-                // Power-up activation logic
                 isPowerUpActive = true;
-                powerUpEndTime = System.currentTimeMillis() + 10000; // Power-up lasts for 5000 ms (5 seconds)
-
-                scheduleSuperAppleRespawn(); // Schedule the respawn of the SuperApple
+                audioContext.playPowerUpMusic();
+                powerUpEndTime = System.currentTimeMillis() + 14000;
+                scheduleSuperAppleRespawn();
             }
-
 
             // Check if the power-up should expire
             if (isPowerUpActive && System.currentTimeMillis() > powerUpEndTime) {
                 isPowerUpActive = false; // Disable power-up
+                audioContext.stopPowerUpMusic();
                 //audioContext.playPowerDownSound(); // Optionally play a sound indicating the power-up has ended
             }
-
         }
     }
-
-
 
 
     private void increaseDifficulty() {
@@ -390,6 +380,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         speedBoostUpdatesRemaining = 0;
         stopSounds();
         saveHighScore();
+        SuperApple.gameOver();
         Log.d("SnakeGame", "Game Over!");
         BadApple.resetAll(badApples, gameObjects);
     }
@@ -601,6 +592,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         mPlaying = true;
         regularApplesEaten = 0;  // Reset the count of regular apples eaten
         updateInterval = 100;    // Reset the update interval to default
+        SuperApple.gameOver();
 
         // Reset and clear any lingering BadApples and prepare the game objects list
         BadApple.resetAll(badApples, gameObjects);
@@ -635,18 +627,14 @@ class SnakeGame extends SurfaceView implements Runnable {
         return mSnake.isOccupied(location);
     }
 
-    private void onPowerUp() {
-        audioContext.playPowerUpSound();
-        // Implement additional power-up logic here
-    }
-
     private void stopSounds() {
         //STOP CALLS FOR ALL SOUNDS GO HERE. CALLED WHEN GAME ENDS.
         //ONLY NEEDED FOR SOUNDS THAT ARE LONGER
         audioContext.stopSharkSwimSound();
+        audioContext.stopPowerUpMusic();
     }
 
     private void setBackgroundMusicVolume(){
-        audioContext.setMusicVolume(0.6F);
+        audioContext.setMusicVolume(0.4F);
     }
 }

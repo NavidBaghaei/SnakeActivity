@@ -49,8 +49,12 @@ public class AudioContext {
         audioStrategy.stopBackgroundMusic();
     }
 
-    public void playPowerUpSound() {
-        audioStrategy.playPowerUpSound();
+    public void playPowerUpMusic() {
+        audioStrategy.playPowerUpMusic();
+    }
+
+    public void stopPowerUpMusic() {
+        audioStrategy.stopPowerUpMusic();
     }
 
     public boolean isMusicPlaying() {
@@ -59,6 +63,9 @@ public class AudioContext {
 
     public void playSpeedBoostSound() {
         audioStrategy.playSpeedBoostSound();
+    }
+    void playSharkDeathSound() {
+        audioStrategy.playSharkDeathSound();
     }
 
     public void setMusicVolume(float volume) {
