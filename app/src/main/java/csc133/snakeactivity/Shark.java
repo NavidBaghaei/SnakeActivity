@@ -26,13 +26,13 @@ class Shark implements GameObject {
     private static final long RESPAWN_DELAY = 10000;
     private boolean firstSpawnDone = false;
     private Random random = new Random();
-    private Snake snake;
+    private ISnake snake;
     private static final long DESPAWN_DELAY = 10000; // Delay before respawn after despawn
 
 
 
 
-    public Shark(Context context, int size, float screenWidth, float screenHeight, Snake snake) {
+    public Shark(Context context, int size, float screenWidth, float screenHeight, ISnake snake) {
         this.mSize = size;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;

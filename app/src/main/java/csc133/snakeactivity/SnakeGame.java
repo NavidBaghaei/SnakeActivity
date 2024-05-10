@@ -45,7 +45,7 @@ class SnakeGame extends SurfaceView implements Runnable {
     private SurfaceHolder mSurfaceHolder;
     private Paint mPaint;
     private Paint textPaint;
-    private Snake mSnake;
+    private ISnake mSnake;
     private Apple mApple;
     private Shark mShark;
     private Bitmap backgroundImage;
@@ -72,6 +72,8 @@ class SnakeGame extends SurfaceView implements Runnable {
     private SuperApple mSuperApple;
     private boolean isPowerUpActive = false;
     private long powerUpEndTime;
+    private PowerUpSnakeDecorator powerUpSnake;
+
 
 
 
@@ -169,11 +171,21 @@ class SnakeGame extends SurfaceView implements Runnable {
 
         // Initialize game objects
         mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, location -> mSnake.isOccupied(location));
-        mSnake = new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize);
+
+        // Correctly initialize mSnake as an ISnake
+        mSnake = new SnakeDecorator(new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize));
+
         mShark = new Shark(getContext(), size.x * 5 / NUM_BLOCKS_WIDE, size.x, size.y, mSnake);
         mSuperApple = new SuperApple(getContext(), new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, this::isOccupied);
 
+        // If you have additional decorators, ensure you wrap them correctly without reassignment
+        PowerUpSnakeDecorator powerUpSnakeDecorator = new PowerUpSnakeDecorator(mSnake);
+        // Optionally, you can directly assign it to mSnake if you want the decorator to be active from the start
+        // mSnake = powerUpSnakeDecorator;
     }
+
+
+
 
     private void saveHighScore() {
         SharedPreferences prefs = getContext().getSharedPreferences("SnakeGame", Context.MODE_PRIVATE);
@@ -272,8 +284,9 @@ class SnakeGame extends SurfaceView implements Runnable {
 
             obj.update();  // Update all game objects
 
-            if (obj instanceof Snake) {
-                if (mSnake.detectDeath()) {
+            if (obj instanceof ISnake) {
+                ISnake snake = (ISnake) obj;
+                if (snake.detectDeath()) {
                     gameOver();
                     return;
                 }
@@ -300,8 +313,14 @@ class SnakeGame extends SurfaceView implements Runnable {
                 Shark shark = (Shark) obj;
                 if (mSnake.checkCollisionWithHead(shark.getLocation(), shark.getBitmap().getWidth(), shark.getBitmap().getHeight())) {
                     if (isPowerUpActive) {
+
                         audioContext.playSharkDeathSound();  // Play a sound indicating the Shark has been defeated
                         mShark.reset();
+
+                        // If power-up is active, remove the Shark instead of ending the game
+                        audioContext.playCrashSound();  // Play a sound indicating the Shark has been defeated
+                        mShark.reset(); // Remove Shark from game objects
+
                     } else {
                         int segmentsRemoved = mSnake.removeCollidedSegments(shark.getLocation());
                         if (segmentsRemoved > 0) {
@@ -320,8 +339,11 @@ class SnakeGame extends SurfaceView implements Runnable {
                     mScore += 1;
                     audioContext.playEatSound(); // Play a sound indicating a successful eat
                 } else {
-                    int segmentsToRemove = Math.min(4, mSnake.segmentLocations.size() - 1);
-                    mSnake.reduceLength(segmentsToRemove);
+
+                    // Normal behavior when power-up is not active
+                    int segmentsToRemove = Math.min(4, mSnake.getSegmentCount() - 1);
+                    mSnake.reduceLength(segmentsToRemove); // Penalize snake by reducing its length
+                    audioContext.playBadEatSound(); // Play the sound for consuming a bad apple
                     mScore -= 3;
                     mScore = Math.max(0, mScore);
                     audioContext.playBadEatSound(); // Play the sound for consuming a bad apple
@@ -335,18 +357,45 @@ class SnakeGame extends SurfaceView implements Runnable {
                 audioContext.playEatSound(); // Play a sound effect when SuperApple is eaten
                 iterator.remove(); // Correct way to remove items during iteration
 
+
                 isPowerUpActive = true;
                 audioContext.playPowerUpMusic();
                 powerUpEndTime = System.currentTimeMillis() + 14000;
                 scheduleSuperAppleRespawn();
+
+                // Power-up activation logic
+                activatePowerUp();
+                powerUpEndTime = System.currentTimeMillis() + 10000; // Power-up lasts for 10000 ms (10 seconds)
+
+                scheduleSuperAppleRespawn(); // Schedule the respawn of the SuperApple
+
             }
 
             // Check if the power-up should expire
             if (isPowerUpActive && System.currentTimeMillis() > powerUpEndTime) {
+
                 isPowerUpActive = false; // Disable power-up
                 audioContext.stopPowerUpMusic();
                 //audioContext.playPowerDownSound(); // Optionally play a sound indicating the power-up has ended
             }
+
+                deactivatePowerUp();  // Deactivate power-up
+                // Optional: audioContext.playPowerDownSound(); // Play a sound indicating the power-up has ended
+            }
+        }
+
+
+    // Methods for activating and deactivating the power-up
+    private void activatePowerUp() {
+        if (mSnake instanceof SnakeDecorator) {
+            ((SnakeDecorator) mSnake).setPowerUpActive(true);
+        }
+    }
+
+    private void deactivatePowerUp() {
+        if (mSnake instanceof SnakeDecorator) {
+            ((SnakeDecorator) mSnake).setPowerUpActive(false);
+
         }
     }
 
@@ -383,6 +432,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         SuperApple.gameOver();
         Log.d("SnakeGame", "Game Over!");
         BadApple.resetAll(badApples, gameObjects);
+
     }
 
     private void drawGameObjects() {
@@ -549,9 +599,10 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
 
-    public Snake getSnake() {
+    public ISnake getSnake() {
         return mSnake;
     }
+
 
     private void togglePause() {
         mPaused = !mPaused;

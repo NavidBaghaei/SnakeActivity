@@ -11,7 +11,7 @@ import android.graphics.PointF;
 import android.view.MotionEvent;
 import java.util.ArrayList;
 
-public class Snake extends MoveCollide implements GameObject, SpaceChecker {
+public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISnake {
     private Bitmap mBitmapHeadRight;
     private Bitmap mBitmapHeadLeft;
     private Bitmap mBitmapHeadUp;
@@ -46,8 +46,8 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
 
         halfWayPoint = mr.x * ss / 2;
     }
-
-    void reset(int w, int h) {
+@Override
+    public void reset(int w, int h) {
         // Reset the heading to the initial direction, typically to the right
         heading = Heading.RIGHT;
 
@@ -65,14 +65,14 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
     public void update() {
         move();
     }
-
+    @Override
     public void updateHeading(Heading newHeading) {
         if (Math.abs(newHeading.ordinal() - this.heading.ordinal()) % 2 == 1) {
             this.heading = newHeading;
         }
     }
-
-    boolean checkSuperAppleDinner(Point superAppleLocation) {
+@Override
+   public boolean checkSuperAppleDinner(Point superAppleLocation) {
         if (segmentLocations.isEmpty()) {
             return false; // Return false if there are no segments to check against
         }
@@ -81,7 +81,8 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
         return head.equals(superAppleLocation); // Check if the head is at the same location as the SuperApple
     }
 
-    boolean checkDinner(Point appleLocation) {
+@Override
+    public boolean checkDinner(Point appleLocation) {
         // Check if there are any segments before accessing them
         if (segmentLocations.isEmpty()) {
             return false; // Return false if there are no segments to check against
@@ -102,8 +103,11 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
         }
         return false; // Return false if the snake has not eaten the apple
     }
-
-
+@Override
+    public boolean detectDeath() {
+        return !segmentLocations.isEmpty() && (detectWallCollision() || detectTailCollision());
+    }
+    @Override
     public boolean checkCollisionWithHead(PointF sharkPoint, int sharkWidth, int sharkHeight) {
         // Ensure there is at least one segment to check against
         if (segmentLocations.isEmpty()) {
@@ -131,7 +135,7 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
     }
 
 
-
+    @Override
     // Method within the Snake class to reduce the length of the snake by a certain number of segments
     public void reduceLength(int lengthToRemove) {
         // Check to make sure we're not trying to remove more segments than exist
@@ -143,7 +147,7 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
             }
         }
     }
-
+    @Override
     public int removeCollidedSegments(PointF sharkPoint) {
         int segmentsRemoved = 0;
         for (int i = 1; i < segmentLocations.size(); i++) {
@@ -193,8 +197,8 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
         }
         return false;
     }
-
-    void switchHeading(MotionEvent motionEvent) {
+@Override
+   public void switchHeading(MotionEvent motionEvent) {
         if (motionEvent.getX() >= halfWayPoint) {
             switch (heading) {
                 case UP:
@@ -227,13 +231,32 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker {
             }
         }
     }
+
     public int getSegmentSize() {
         return this.segmentSize;
     }
+    @Override
     public Point getHeadLocation() {
         if (!segmentLocations.isEmpty()) {
             return new Point(segmentLocations.get(0));
         }
         return null; // Return null if there are no segments
     }
+
+    @Override
+    public int getSegmentCount() {
+        return segmentLocations.size();
+    }
+
+    @Override
+    public void removeSegments(int count) {
+        int segmentsToRemove = Math.min(count, segmentLocations.size() - 1);
+        for (int i = 0; i < segmentsToRemove; i++) {
+            if (!segmentLocations.isEmpty()) {
+                segmentLocations.remove(segmentLocations.size() - 1);
+            }
+        }
+    }
+
+
 }
