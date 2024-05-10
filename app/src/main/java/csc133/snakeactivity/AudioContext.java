@@ -29,7 +29,7 @@ public class AudioContext {
         audioStrategy.playSharkSwimSound();
     }
 
-    public void stopSharkSwimSound() {
+    public static void stopSharkSwimSound() {
         audioStrategy.stopSharkSwimSound();
     }
 

@@ -58,6 +58,7 @@ class Shark implements GameObject {
             float nextX = location.x + direction.x * 40;
             if ((spawnLeft && nextX > screenWidth) || (!spawnLeft && nextX + mBitmapShark.getWidth() < 0)) {
                 isMoving = false;
+                AudioContext.stopSharkSwimSound();
                 lastDeactivatedTime = currentTime;
                 reset();
             } else {
