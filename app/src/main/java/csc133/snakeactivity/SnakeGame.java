@@ -1,28 +1,18 @@
 package csc133.snakeactivity;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Point;
-import android.graphics.Rect;
-import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Typeface;
-import androidx.core.content.res.ResourcesCompat;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-import android.content.SharedPreferences;
-import android.os.Handler;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
+import android.graphics.*;
+import android.os.Handler;
+import android.util.Log;
+import android.view.*;
+import android.widget.*;
+import androidx.core.content.res.*;
+import java.util.*;
 
 @SuppressLint("ViewConstructor")
 class SnakeGame extends SurfaceView implements Runnable {
@@ -58,6 +48,8 @@ class SnakeGame extends SurfaceView implements Runnable {
     private boolean shouldDrawSpeedBoost = false;
     private long speedBoostDisplayStartTime;
     private static final long SPEED_BOOST_DISPLAY_DURATION = 5000;
+    private static final long POWER_UP_DURATION = 14000; // Power-up duration in milliseconds
+    private volatile boolean isGameOver = false; // Add a flag to track game over state
 
     private AudioContext audioContext;
 
@@ -206,8 +198,9 @@ class SnakeGame extends SurfaceView implements Runnable {
         long lastSuperAppleSpawnTime = System.currentTimeMillis();
 
         while (mPlaying) {
+            long currentTime = System.currentTimeMillis();
+
             if (!mPaused) {
-                long currentTime = System.currentTimeMillis();
                 if (updateRequired()) {
                     updateGameObjects();
                     drawGameObjects();
@@ -293,37 +286,41 @@ class SnakeGame extends SurfaceView implements Runnable {
             if (obj instanceof SuperApple && mSnake.checkSuperAppleDinner(((SuperApple) obj).getLocation())) {
                 ((SuperApple) obj).markAsEaten();
                 audioContext.playEatSound();
-                iterator.remove();
                 isPowerUpActive = true;
                 audioContext.playPowerUpMusic();
-                powerUpEndTime = System.currentTimeMillis() + 14000;
+                long duration = POWER_UP_DURATION; // Duration of the power-up
+                powerUpEndTime = System.currentTimeMillis() + duration;
                 scheduleSuperAppleRespawn();
-                activatePowerUp();
-                powerUpEndTime = System.currentTimeMillis() + 10000;
-                scheduleSuperAppleRespawn();
+                activatePowerUp(duration); // Call method to activate power-up with duration
+                // Remove the power-up object after the iteration is complete
+                iterator.remove();
             }
+        }
 
-            if (isPowerUpActive && System.currentTimeMillis() > powerUpEndTime) {
-                isPowerUpActive = false;
-                audioContext.stopPowerUpMusic();
-            }
-
-            deactivatePowerUp();
+        // Check if the power-up duration has expired and deactivate if necessary
+        if (isPowerUpActive && System.currentTimeMillis() > powerUpEndTime) {
+            isPowerUpActive = false;
+            audioContext.stopPowerUpMusic();
+            deactivatePowerUp(); // Call method to deactivate power-up
         }
     }
 
     // Method to activate power-up
-    private void activatePowerUp() {
+    private void activatePowerUp(long duration) {
         if (mSnake instanceof SnakeDecorator) {
-            ((SnakeDecorator) mSnake).setPowerUpActive(true);
+            ((SnakeDecorator) mSnake).setPowerUpActive(true, duration);
         }
+        isPowerUpActive = true;
+        audioContext.playPowerUpMusic();
     }
 
     // Method to deactivate power-up
     private void deactivatePowerUp() {
         if (mSnake instanceof SnakeDecorator) {
-            ((SnakeDecorator) mSnake).setPowerUpActive(false);
+            ((SnakeDecorator) mSnake).setPowerUpActive(false, 0); // Set duration to 0 for immediate deactivation
         }
+        isPowerUpActive = false;
+        audioContext.stopPowerUpMusic(); // Stop the power-up music
     }
 
     // Method to increase game difficulty
@@ -585,33 +582,60 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
-    // Method to show restart dialog
     private void showRestartDialog() {
         final Context activityContext = getContext();
         if (activityContext instanceof Activity) {
             ((Activity) activityContext).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    // Inflate custom layout for dialog
+                    LayoutInflater inflater = LayoutInflater.from(activityContext);
+                    View dialogView = inflater.inflate(R.layout.custom_dialog_layout, null);
+
+                    // Find views in custom layout
+                    ImageView backgroundImageView = dialogView.findViewById(R.id.background_image_view);
+                    Button restartButton = dialogView.findViewById(R.id.restart_button);
+                    Button exitButton = dialogView.findViewById(R.id.exit_button);
+
+                    // Set image on the background image view
+                    backgroundImageView.setImageResource(R.drawable.game_over);
+
                     AlertDialog.Builder builder = new AlertDialog.Builder(activityContext);
-                    builder.setTitle("Game Over");
-                    builder.setMessage("Do you want to restart the game?");
-                    builder.setPositiveButton("Restart", new DialogInterface.OnClickListener() {
+                    builder.setView(dialogView);
+                    builder.setCancelable(false); // Prevent dismissing dialog by clicking outside
+                    AlertDialog dialog = builder.create();
+
+                    // Set click listeners for buttons
+                    restartButton.setOnClickListener(new View.OnClickListener() {
                         @Override
-                        public void onClick(DialogInterface dialog, int which) {
+                        public void onClick(View v) {
+                            dialog.dismiss(); // Dismiss dialog
                             startNewGame(); // Implement startNewGame() method to reset the game state
                         }
                     });
-                    builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+
+                    exitButton.setOnClickListener(new View.OnClickListener() {
                         @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            // Exit the game
+                        public void onClick(View v) {
+                            dialog.dismiss(); // Dismiss dialog
                             if (activityContext instanceof Activity) {
-                                ((Activity) activityContext).finish();
+                                ((Activity) activityContext).finish(); // Exit the game
                             }
                         }
                     });
-                    builder.setCancelable(false); // Prevent dismissing dialog by clicking outside
-                    AlertDialog dialog = builder.create();
+
+                    // Ensure background image is square
+                    backgroundImageView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            int size = Math.min(backgroundImageView.getWidth(), backgroundImageView.getHeight());
+                            ViewGroup.LayoutParams layoutParams = backgroundImageView.getLayoutParams();
+                            layoutParams.width = size;
+                            layoutParams.height = size;
+                            backgroundImageView.setLayoutParams(layoutParams);
+                        }
+                    });
+
                     dialog.show();
                 }
             });
