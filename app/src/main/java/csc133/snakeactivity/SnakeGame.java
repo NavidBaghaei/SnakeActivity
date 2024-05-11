@@ -253,8 +253,6 @@ class SnakeGame extends SurfaceView implements Runnable {
                     if (isPowerUpActive) {
                         audioContext.playSharkDeathSound();
                         mShark.reset();
-                        audioContext.playCrashSound();
-                        mShark.reset();
                     } else {
                         int segmentsRemoved = mSnake.removeCollidedSegments(shark.getLocation());
                         if (segmentsRemoved > 0) {
@@ -274,7 +272,6 @@ class SnakeGame extends SurfaceView implements Runnable {
                 } else {
                     int segmentsToRemove = Math.min(4, mSnake.getSegmentCount() - 1);
                     mSnake.reduceLength(segmentsToRemove);
-                    audioContext.playBadEatSound();
                     mScore -= 3;
                     mScore = Math.max(0, mScore);
                     audioContext.playBadEatSound();
