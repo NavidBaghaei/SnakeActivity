@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -258,20 +259,31 @@ class SnakeGame extends SurfaceView implements Runnable {
                 }
             }
 
+            // Interaction with Shark
             if (obj instanceof Shark) {
                 Shark shark = (Shark) obj;
-                if (mSnake.checkCollisionWithHead(shark.getLocation(), shark.getBitmap().getWidth(), shark.getBitmap().getHeight())) {
+                PointF sharkLocation = new PointF(shark.getLocation().x, shark.getLocation().y);
+                int sharkWidth = shark.getBitmap().getWidth();
+                int sharkHeight = shark.getBitmap().getHeight();
+
+                if (mSnake.checkCollisionWithHead(sharkLocation, sharkWidth, sharkHeight)) {
                     if (isPowerUpActive) {
+                        // Power-up active: defeat shark but do not end game
                         audioContext.playSharkDeathSound();
                         mShark.reset();
                     } else {
-                        int segmentsRemoved = mSnake.removeCollidedSegments(shark.getLocation());
+                        // No power-up: game over on head collision
+                        gameOver();
+                        return;
+                    }
+                } else {
+                    // Check for body collisions if no head collision
+                    if (!isPowerUpActive) {  // Only remove segments if the power-up is not active
+                        int segmentsRemoved = mSnake.removeCollidedSegments(sharkLocation, sharkWidth, sharkHeight);
                         if (segmentsRemoved > 0) {
                             mScore -= segmentsRemoved;
                             mScore = Math.max(0, mScore);
                         }
-                        gameOver();
-                        return;
                     }
                 }
             }
