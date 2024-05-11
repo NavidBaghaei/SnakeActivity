@@ -15,7 +15,7 @@ public interface ISnake extends GameObject {
     boolean isOccupied(Point location);
     boolean checkSuperAppleDinner(Point superAppleLocation);
     boolean detectDeath();
-    int removeCollidedSegments(PointF sharkPoint, int sharkWidth, int sharkHeight);
+    int removeCollidedSegments(PointF sharkPoint);
     void reduceLength(int lengthToRemove);
     boolean checkCollisionWithHead(PointF sharkPoint, int sharkWidth, int sharkHeight);
     void reset(int w, int h);

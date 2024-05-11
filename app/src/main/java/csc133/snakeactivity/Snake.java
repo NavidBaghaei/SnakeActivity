@@ -135,7 +135,6 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISna
     }
 
 
-
     @Override
     // Method within the Snake class to reduce the length of the snake by a certain number of segments
     public void reduceLength(int lengthToRemove) {
@@ -149,39 +148,21 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISna
         }
     }
     @Override
-    public int removeCollidedSegments(PointF sharkPoint, int sharkWidth, int sharkHeight) {
-        // Check if there are only head segments to avoid unnecessary checks
-        if (segmentLocations.size() < 2) {
-            return 0; // No body segments to check against, so no segments can be removed
-        }
-
+    public int removeCollidedSegments(PointF sharkPoint) {
         int segmentsRemoved = 0;
-        // Start checking from the second segment to exclude the head
         for (int i = 1; i < segmentLocations.size(); i++) {
             Point part = segmentLocations.get(i);
-            float partLeft = part.x * mSegmentSize;
-            float partRight = (part.x + 1) * mSegmentSize;
-            float partTop = part.y * mSegmentSize;
-            float partBottom = (part.y + 1) * mSegmentSize;
-
-            // Calculate the bounds of the shark
-            float sharkLeft = sharkPoint.x;
-            float sharkRight = sharkPoint.x + sharkWidth;
-            float sharkTop = sharkPoint.y;
-            float sharkBottom = sharkPoint.y + sharkHeight;
-
-            // Check if the shark intersects with any body segment
-            if (sharkLeft < partRight && sharkRight > partLeft &&
-                    sharkTop < partBottom && sharkBottom > partTop) {
+            if (sharkPoint.x >= part.x * mSegmentSize && sharkPoint.x <= (part.x + 1) * mSegmentSize &&
+                    sharkPoint.y >= part.y * mSegmentSize && sharkPoint.y <= (part.y + 1) * mSegmentSize) {
                 segmentsRemoved = segmentLocations.size() - i;
                 segmentLocations.subList(i, segmentLocations.size()).clear(); // Remove from collision point to end of tail
-                return segmentsRemoved; // Return the number of segments removed and exit after the first collision detection
+                mScore -= segmentsRemoved; // Decrease score based on the number of segments removed
+                AudioContext.playSharkBiteSound();
+                break;
             }
         }
-        return segmentsRemoved; // Return the number of segments removed or 0 if no collision
+        return segmentsRemoved;
     }
-
-
 
 
     @Override
