@@ -308,30 +308,38 @@ class SnakeGame extends SurfaceView implements Runnable {
                 }
             }
 
+
             // Interaction with Shark
             if (obj instanceof Shark) {
                 Shark shark = (Shark) obj;
-                if (mSnake.checkCollisionWithHead(shark.getLocation(), shark.getBitmap().getWidth(), shark.getBitmap().getHeight())) {
+                PointF sharkLocation = new PointF(shark.getLocation().x, shark.getLocation().y);
+                int sharkWidth = shark.getBitmap().getWidth();
+                int sharkHeight = shark.getBitmap().getHeight();
+
+                if (mSnake.checkCollisionWithHead(sharkLocation, sharkWidth, sharkHeight)) {
                     if (isPowerUpActive) {
-
-                        audioContext.playSharkDeathSound();  // Play a sound indicating the Shark has been defeated
+                        // Power-up active: defeat shark but do not end game
+                        audioContext.playSharkDeathSound();
                         mShark.reset();
-
-                        // If power-up is active, remove the Shark instead of ending the game
-                        audioContext.playCrashSound();  // Play a sound indicating the Shark has been defeated
-                        mShark.reset(); // Remove Shark from game objects
-
                     } else {
-                        int segmentsRemoved = mSnake.removeCollidedSegments(shark.getLocation());
-                        if (segmentsRemoved > 0) {
-                            mScore -= segmentsRemoved;
-                            mScore = Math.max(0, mScore);  // Ensure score does not go negative
-                        }
+                        // No power-up: game over on head collision
                         gameOver();
                         return;
                     }
+                } else {
+                    // Check for body collisions if no head collision
+                    if (!isPowerUpActive) {  // Only remove segments if the power-up is not active
+                        int segmentsRemoved = mSnake.removeCollidedSegments(sharkLocation, sharkWidth, sharkHeight);
+                        if (segmentsRemoved > 0) {
+                            mScore -= segmentsRemoved;
+                            mScore = Math.max(0, mScore);
+                        }
+                    }
                 }
             }
+
+
+
 
             // Interaction with BadApple
             if (obj instanceof BadApple && mSnake.checkDinner(((BadApple) obj).getLocation())) {
