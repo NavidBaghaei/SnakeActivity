@@ -55,7 +55,13 @@ class SnakeGame extends SurfaceView implements Runnable {
     private SuperApple mSuperApple;
     private boolean isPowerUpActive = false;
     private long powerUpEndTime;
+    private boolean shouldDrawSpeedBoost = false;
+    private long speedBoostDisplayStartTime;
+    private static final long SPEED_BOOST_DISPLAY_DURATION = 5000;
 
+    private AudioContext audioContext;
+
+    // Runnable for spawning BadApples
     private final Runnable spawnBadAppleRunnable = new Runnable() {
         @Override
         public void run() {
@@ -69,6 +75,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     };
 
+    // Runnable for spawning SuperApples
     private final Runnable spawnSuperAppleRunnable = new Runnable() {
         @Override
         public void run() {
@@ -82,6 +89,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     };
 
+    // Method to schedule respawn of SuperApples
     private void scheduleSuperAppleRespawn() {
         handler.postDelayed(() -> {
             if (mPlaying && !mPaused) {
@@ -93,6 +101,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }, mSuperApple.getRespawnDelay());
     }
 
+    // Method to initialize background images
     private void initializeBackgrounds(Context context, Point size) {
         backgroundImages = new Bitmap[]{
                 BitmapFactory.decodeResource(context.getResources(), R.drawable.snake1),
@@ -104,19 +113,16 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
-    private boolean shouldDrawSpeedBoost = false;
-    private long speedBoostDisplayStartTime;
-    private static final long SPEED_BOOST_DISPLAY_DURATION = 5000;
-
-    private AudioContext audioContext;
-
+    // Constructor
     public SnakeGame(Context context, Point size) {
         super(context);
         this.size = size;
         Typeface customTypeface = ResourcesCompat.getFont(context, R.font.workbench);
         initializeGame(context, size);
+        // Create AudioContext instance
         this.audioContext = new AudioContext(new ExtendedAudioStrategy());
         audioContext.loadSounds(context);
+        // Start background music if not playing
         if (!audioContext.isMusicPlaying()) {
             audioContext.startBackgroundMusic();
             setBackgroundMusicVolume();
@@ -125,6 +131,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         initializeGameObjects(customTypeface);
     }
 
+    // Method to initialize game objects
     private void initializeGame(Context context, Point size){
         int blockSize = size.x / NUM_BLOCKS_WIDE;
         mNumBlocksHigh = size.y / blockSize;
@@ -137,6 +144,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         mSuperApple = new SuperApple(getContext(), new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, this::isOccupied);
     }
 
+    // Method to save high score
     private void saveHighScore() {
         SharedPreferences prefs = getContext().getSharedPreferences("SnakeGame", Context.MODE_PRIVATE);
         int highScore = prefs.getInt("highScore", 0);
@@ -148,11 +156,13 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to get high score
     private int getHighScore() {
         SharedPreferences prefs = getContext().getSharedPreferences("SnakeGame", Context.MODE_PRIVATE);
         return prefs.getInt("highScore", 0);
     }
 
+    // Method to initialize game objects and UI elements
     private void initializeGameObjects(Typeface customTypeface) {
         mSurfaceHolder = getHolder();
         mPaint = new Paint();
@@ -183,6 +193,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         );
     }
 
+    // Method to spawn BadApples
     private void spawnBadApple() {
         BadApple badApple = new BadApple(getContext(), new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), size.x / NUM_BLOCKS_WIDE, this::isOccupied);
         badApple.spawn();
@@ -190,6 +201,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         gameObjects.add(badApple);
     }
 
+    // Method to run the game loop
     public void run() {
         long lastSuperAppleSpawnTime = System.currentTimeMillis();
 
@@ -221,6 +233,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to update game objects
     private void updateGameObjects() {
         Iterator<GameObject> iterator = gameObjects.iterator();
         while (iterator.hasNext()) {
@@ -235,6 +248,7 @@ class SnakeGame extends SurfaceView implements Runnable {
                 }
             }
 
+            // Check collisions and update score
             if (obj instanceof Apple && mSnake.checkDinner(((Apple) obj).getLocation())) {
                 mApple.spawn();
                 mScore += 1;
@@ -242,9 +256,6 @@ class SnakeGame extends SurfaceView implements Runnable {
                 if (mScore % 5 == 0) {
                     increaseDifficulty();
                 }
-                /*if (mScore % 10 == 0) {
-                    changeBackground();
-                }*/
             }
 
             if (obj instanceof Shark) {
@@ -301,18 +312,21 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to activate power-up
     private void activatePowerUp() {
         if (mSnake instanceof SnakeDecorator) {
             ((SnakeDecorator) mSnake).setPowerUpActive(true);
         }
     }
 
+    // Method to deactivate power-up
     private void deactivatePowerUp() {
         if (mSnake instanceof SnakeDecorator) {
             ((SnakeDecorator) mSnake).setPowerUpActive(false);
         }
     }
 
+    // Method to increase game difficulty
     private void increaseDifficulty() {
         int speedIncreaseFactor = mScore / 5;
         updateInterval = Math.max(100 - 10 * speedIncreaseFactor, 20);
@@ -320,6 +334,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         audioContext.playSpeedBoostSound();
     }
 
+    // Method to check if update is required
     public boolean updateRequired() {
         final long currentTime = System.currentTimeMillis();
         if (mNextFrameTime <= currentTime) {
@@ -329,6 +344,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         return false;
     }
 
+    // Method to handle game over
     private void gameOver() {
         audioContext.playCrashSound();
         audioContext.stopBackgroundMusic();
@@ -341,6 +357,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         showRestartDialog();
     }
 
+    // Method to draw game objects on canvas
     private void drawGameObjects() {
         if (!mSurfaceHolder.getSurface().isValid()) {
             return;
@@ -360,6 +377,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         mSurfaceHolder.unlockCanvasAndPost(mCanvas);
     }
 
+    // Method to draw background
     private void drawBackground() {
         mCanvas.drawColor(Color.argb(255, 26, 128, 182));
         if (backgroundImage != null) {
@@ -369,12 +387,14 @@ class SnakeGame extends SurfaceView implements Runnable {
         mCanvas.drawRect(0, 0, mCanvas.getWidth(), mCanvas.getHeight(), mPaint);
     }
 
+    // Method to draw shark on canvas
     private void drawShark(Canvas canvas) {
         if (mShark != null) {
             mShark.draw(canvas, mPaint);
         }
     }
 
+    // Method to draw score
     private void drawScore() {
         int highScore = getHighScore();
         mPaint.setColor(Color.argb(255, 255, 255, 255));
@@ -383,6 +403,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         mCanvas.drawText("Score: " + mScore, 20, 260, mPaint);
     }
 
+    // Method to draw game objects on canvas
     private void drawGameObjectsOnCanvas() {
         for (GameObject obj : gameObjects) {
             obj.draw(mCanvas, mPaint);
@@ -403,6 +424,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to draw developer names
     private void drawDeveloperNames(Canvas canvas) {
         if (namesDisplayStartTime == -1) {
             namesDisplayStartTime = System.currentTimeMillis();
@@ -431,6 +453,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to draw paused message
     private void drawPausedMessage() {
         if (mPaused && isGameStarted) {
             mPaint.setTextSize(250);
@@ -438,6 +461,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to draw tap to play message
     private void drawTapToPlayMessage() {
         if (!isGameStarted) {
             mPaint.setTextSize(250);
@@ -445,6 +469,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to draw pause button
     private void drawPauseButton() {
         Paint buttonPaint = new Paint();
         buttonPaint.setColor(Color.argb(128, 0, 0, 0));
@@ -457,6 +482,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         mCanvas.drawText(pauseButtonText, x, y, buttonPaint);
     }
 
+    // Method to handle touch events
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {
@@ -477,6 +503,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         return super.onTouchEvent(motionEvent);
     }
 
+    // Method to pause the game
     public void pause() {
         mPaused = true;
         handler.removeCallbacks(spawnBadAppleRunnable);
@@ -484,6 +511,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         isSpawnScheduled = false;
     }
 
+    // Method to resume the game
     public void resume() {
         mPaused = false;
         if (!mPlaying) {
@@ -497,23 +525,28 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to get the snake
     public ISnake getSnake() {
         return mSnake;
     }
 
+    // Method to toggle pause state
     private void togglePause() {
         mPaused = !mPaused;
         pauseButtonText = mPaused ? "Resume" : "Pause";
     }
 
+    // Method to pause music
     protected void pauseMusic() {
         audioContext.stopBackgroundMusic();
     }
 
+    // Method to resume music
     protected void resumeMusic() {
         audioContext.startBackgroundMusic();
     }
 
+    // Method to start a new game
     private void startNewGame() {
         if (mThread != null && mThread.isAlive()) {
             pause();
@@ -533,9 +566,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         mNextFrameTime = System.currentTimeMillis();
         isGameStarted = true;
         mPaused = false;
-        //boolean speedBoost = false;
         mPlaying = true;
-        //int regularApplesEaten = 0;
         updateInterval = 100;
         SuperApple.gameOver();
         BadApple.resetAll(badApples, gameObjects);
@@ -554,6 +585,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to show restart dialog
     private void showRestartDialog() {
         final Context activityContext = getContext();
         if (activityContext instanceof Activity) {
@@ -587,6 +619,7 @@ class SnakeGame extends SurfaceView implements Runnable {
     }
 
 
+    // Method to schedule next bad apple spawn
     private void scheduleNextBadAppleSpawn() {
         if (!mPaused && mPlaying && !isSpawnScheduled) {
             handler.postDelayed(spawnBadAppleRunnable, 30000 + new Random().nextInt(15000));
@@ -594,15 +627,18 @@ class SnakeGame extends SurfaceView implements Runnable {
         }
     }
 
+    // Method to check if a location is occupied
     public boolean isOccupied(Point location) {
         return mSnake.isOccupied(location);
     }
 
+    // Method to stop sounds
     private void stopSounds() {
         AudioContext.stopSharkSwimSound();
         audioContext.stopPowerUpMusic();
     }
 
+    // Method to set background music volume
     private void setBackgroundMusicVolume() {
         audioContext.setMusicVolume(0.4F);
     }
