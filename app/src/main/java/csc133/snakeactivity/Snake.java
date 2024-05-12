@@ -16,7 +16,10 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISna
     private Bitmap mBitmapHeadLeft;
     private Bitmap mBitmapHeadUp;
     private Bitmap mBitmapHeadDown;
-    private Bitmap mBitmapBody;
+    private Bitmap mBitmapBodyRight;
+    private Bitmap mBitmapBodyLeft;
+    private Bitmap mBitmapBodyUp;
+    private Bitmap mBitmapBodyDown;
     private int halfWayPoint;
     private int mScore; // Track the score
     private int segmentSize;
@@ -29,20 +32,23 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISna
 
         // Initialize and scale bitmaps
         mBitmapHeadRight = BitmapFactory.decodeResource(context.getResources(), R.drawable.head);
-        mBitmapHeadRight = Bitmap.createScaledBitmap(mBitmapHeadRight, ss, ss, false);
+        mBitmapHeadRight = Bitmap.createScaledBitmap(mBitmapHeadRight, 80, 80, false);
+
+        mBitmapBodyRight = BitmapFactory.decodeResource(context.getResources(), R.drawable.body);
+        mBitmapBodyRight = Bitmap.createScaledBitmap(mBitmapBodyRight, 70, 70, false);
 
         Matrix matrix = new Matrix();
         matrix.preScale(-1, 1);
-        mBitmapHeadLeft = Bitmap.createBitmap(mBitmapHeadRight, 0, 0, ss, ss, matrix, true);
+        mBitmapHeadLeft = Bitmap.createBitmap(mBitmapHeadRight, 0, 0, 80, 80, matrix, true);
+        mBitmapBodyLeft = Bitmap.createBitmap(mBitmapBodyRight, 0, 0, 70, 70, matrix, true);
 
         matrix.preRotate(-90);
-        mBitmapHeadUp = Bitmap.createBitmap(mBitmapHeadRight, 0, 0, ss, ss, matrix, true);
+        mBitmapHeadUp = Bitmap.createBitmap(mBitmapHeadRight, 0, 0, 80, 80, matrix, true);
+        mBitmapBodyUp = Bitmap.createBitmap(mBitmapBodyRight, 0, 0, 70, 70, matrix, true);
 
         matrix.preRotate(180);
-        mBitmapHeadDown = Bitmap.createBitmap(mBitmapHeadRight, 0, 0, ss, ss, matrix, true);
-
-        mBitmapBody = BitmapFactory.decodeResource(context.getResources(), R.drawable.body);
-        mBitmapBody = Bitmap.createScaledBitmap(mBitmapBody, ss, ss, false);
+        mBitmapHeadDown = Bitmap.createBitmap(mBitmapHeadRight, 0, 0, 80, 80, matrix, true);
+        mBitmapBodyDown = Bitmap.createBitmap(mBitmapBodyRight, 0, 0, 70, 70, matrix, true);
 
         halfWayPoint = mr.x * ss / 2;
     }
@@ -184,26 +190,34 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISna
     @Override
     public void draw(Canvas canvas, Paint paint) {
         if (!segmentLocations.isEmpty()) {
+            Bitmap bodyBitmap = null;
             switch (heading) {
                 case RIGHT:
                     canvas.drawBitmap(mBitmapHeadRight, segmentLocations.get(0).x * mSegmentSize, segmentLocations.get(0).y * mSegmentSize, paint);
+                    bodyBitmap = mBitmapBodyRight;
                     break;
                 case LEFT:
                     canvas.drawBitmap(mBitmapHeadLeft, segmentLocations.get(0).x * mSegmentSize, segmentLocations.get(0).y * mSegmentSize, paint);
+                    bodyBitmap = mBitmapBodyLeft;
                     break;
                 case UP:
                     canvas.drawBitmap(mBitmapHeadUp, segmentLocations.get(0).x * mSegmentSize, segmentLocations.get(0).y * mSegmentSize, paint);
+                    bodyBitmap = mBitmapBodyUp;
                     break;
                 case DOWN:
                     canvas.drawBitmap(mBitmapHeadDown, segmentLocations.get(0).x * mSegmentSize, segmentLocations.get(0).y * mSegmentSize, paint);
+                    bodyBitmap = mBitmapBodyDown;
                     break;
             }
-            for (int i = 1; i < segmentLocations.size(); i++) {
-                canvas.drawBitmap(mBitmapBody, segmentLocations.get(i).x * mSegmentSize, segmentLocations.get(i).y * mSegmentSize, paint);
+            if (bodyBitmap != null) {
+                // Draw the rest of the body segments with the appropriate bitmap
+                for (int i = 1; i < segmentLocations.size(); i++) {
+                    canvas.drawBitmap(bodyBitmap, segmentLocations.get(i).x * mSegmentSize, segmentLocations.get(i).y * mSegmentSize, paint);
+                }
+
             }
         }
     }
-
     @Override
     public boolean isOccupied(Point location) {
         for (Point segment : segmentLocations) {
