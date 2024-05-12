@@ -75,9 +75,12 @@ public class SnakeDecorator implements ISnake {
     }
 
     @Override
-    public int removeCollidedSegments(PointF sharkPoint) {
-        return decoratedSnake.removeCollidedSegments(sharkPoint);
+    public int removeCollidedSegments(PointF sharkPoint, int sharkWidth, int sharkHeight){
+        return decoratedSnake.removeCollidedSegments(sharkPoint, sharkWidth, sharkHeight);
+
     }
+ 
+  
 
     @Override
     public void reduceLength(int lengthToRemove) {

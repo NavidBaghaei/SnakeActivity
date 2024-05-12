@@ -1,6 +1,13 @@
 package csc133.snakeactivity;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import androidx.core.content.res.ResourcesCompat;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import android.os.Handler;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -251,20 +258,31 @@ class SnakeGame extends SurfaceView implements Runnable {
                 }
             }
 
+            // Interaction with Shark
             if (obj instanceof Shark) {
                 Shark shark = (Shark) obj;
-                if (mSnake.checkCollisionWithHead(shark.getLocation(), shark.getBitmap().getWidth(), shark.getBitmap().getHeight())) {
+                PointF sharkLocation = new PointF(shark.getLocation().x, shark.getLocation().y);
+                int sharkWidth = shark.getBitmap().getWidth();
+                int sharkHeight = shark.getBitmap().getHeight();
+
+                if (mSnake.checkCollisionWithHead(sharkLocation, sharkWidth, sharkHeight)) {
                     if (isPowerUpActive) {
+                        // Power-up active: defeat shark but do not end game
                         audioContext.playSharkDeathSound();
                         mShark.reset();
                     } else {
-                        int segmentsRemoved = mSnake.removeCollidedSegments(shark.getLocation());
+                        // No power-up: game over on head collision
+                        gameOver();
+                        return;
+                    }
+                } else {
+                    // Check for body collisions if no head collision
+                    if (!isPowerUpActive) {  // Only remove segments if the power-up is not active
+                        int segmentsRemoved = mSnake.removeCollidedSegments(sharkLocation, sharkWidth, sharkHeight);
                         if (segmentsRemoved > 0) {
                             mScore -= segmentsRemoved;
                             mScore = Math.max(0, mScore);
                         }
-                        gameOver();
-                        return;
                     }
                 }
             }
