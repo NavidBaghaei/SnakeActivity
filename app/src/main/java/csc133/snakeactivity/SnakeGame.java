@@ -1,4 +1,5 @@
 package csc133.snakeactivity;
+import csc133.snakeactivity.PowerUpSnakeDecorator;
 
 import android.annotation.SuppressLint;
 import android.content.*;
@@ -17,6 +18,7 @@ import android.graphics.*;
 import android.view.*;
 import android.widget.*;
 import java.util.*;
+import android.graphics.drawable.Drawable;
 
 @SuppressLint("ViewConstructor")
 class SnakeGame extends SurfaceView implements Runnable {
@@ -127,15 +129,30 @@ class SnakeGame extends SurfaceView implements Runnable {
         initializeGameObjects(customTypeface);
     }
 
-    // Method to initialize game objects
-    private void initializeGame(Context context, Point size){
+    private void initializeGame(Context context, Point size) {
         int blockSize = size.x / NUM_BLOCKS_WIDE;
         mNumBlocksHigh = size.y / blockSize;
         initializeBackgrounds(context, size);
         backgroundImage = backgroundImages[0];
 
+        // Create the snake object
+        mSnake = new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize);
+
+        // Load the drawable resources for the snake head and body
+        @SuppressLint("UseCompatLoadingForDrawables")
+        Drawable snakeHeadDrawable = context.getResources().getDrawable(R.drawable.head);
+        @SuppressLint("UseCompatLoadingForDrawables")
+        Drawable snakeBodyDrawable = context.getResources().getDrawable(R.drawable.body);
+
+        // Ensure that the drawables are mutable
+        snakeHeadDrawable = snakeHeadDrawable.mutate();
+        snakeBodyDrawable = snakeBodyDrawable.mutate();
+
+        // Decorate the snake object with PowerUpSnakeDecorator
+        mSnake = new PowerUpSnakeDecorator(mSnake, snakeHeadDrawable, snakeBodyDrawable, blockSize);
+
+        // Initialize other game objects
         mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, location -> mSnake.isOccupied(location));
-        mSnake = new SnakeDecorator(new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize));
         mShark = new Shark(getContext(), size.x * 5 / NUM_BLOCKS_WIDE, size.x, size.y, mSnake);
         mSuperApple = new SuperApple(getContext(), new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize, this::isOccupied);
     }
@@ -322,8 +339,8 @@ class SnakeGame extends SurfaceView implements Runnable {
 
     // Method to activate power-up
     private void activatePowerUp(long duration) {
-        if (mSnake instanceof SnakeDecorator) {
-            ((SnakeDecorator) mSnake).setPowerUpActive(true, duration);
+        if (mSnake instanceof PowerUpSnakeDecorator) {
+            ((PowerUpSnakeDecorator) mSnake).setPowerUpActive(true, duration);
         }
         isPowerUpActive = true;
         audioContext.playPowerUpMusic();
@@ -331,8 +348,8 @@ class SnakeGame extends SurfaceView implements Runnable {
 
     // Method to deactivate power-up
     private void deactivatePowerUp() {
-        if (mSnake instanceof SnakeDecorator) {
-            ((SnakeDecorator) mSnake).setPowerUpActive(false, 0); // Set duration to 0 for immediate deactivation
+        if (mSnake instanceof PowerUpSnakeDecorator) {
+            ((PowerUpSnakeDecorator) mSnake).setPowerUpActive(false, 0L); // Set duration to 0 for immediate deactivation
         }
         isPowerUpActive = false;
         audioContext.stopPowerUpMusic(); // Stop the power-up music

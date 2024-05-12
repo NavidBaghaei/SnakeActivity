@@ -108,4 +108,8 @@ public class SnakeDecorator implements ISnake {
     public void updateHeading(MoveCollide.Heading newHeading) {
         decoratedSnake.updateHeading(newHeading);  // Delegate to the decorated snake
     }
+
+    public ISnake getDecorated() {
+        return decoratedSnake;
+    }
 }

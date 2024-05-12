@@ -1,5 +1,6 @@
 package csc133.snakeactivity;
 
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,7 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.view.MotionEvent;
-import java.util.ArrayList;
+import java.util.*;
 
 public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISnake {
     private Bitmap mBitmapHeadRight;
@@ -65,6 +66,12 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISna
 
         // Reset the score to zero for the new game
         mScore = 0;
+    }
+
+    // Implementing the getSegments() method to return the segments of the snake
+    public List<Point> getSegments() {
+        // Return a copy of the segmentLocations list
+        return new ArrayList<>(segmentLocations);
     }
 
     @Override
@@ -218,6 +225,22 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISna
             }
         }
     }
+
+    public Bitmap getHeadBitmapRight() {
+        return mBitmapHeadRight;
+    }
+
+    public Bitmap getHeadBitmapLeft() {
+        return mBitmapHeadLeft;
+    }
+
+    public Bitmap getHeadBitmapUp() {
+        return mBitmapHeadUp;
+    }
+
+    public Bitmap getHeadBitmapDown() {
+        return mBitmapHeadDown;
+    }
     @Override
     public boolean isOccupied(Point location) {
         for (Point segment : segmentLocations) {
@@ -260,6 +283,11 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISna
                     break;
             }
         }
+    }
+
+    // Inside your Snake class
+    public Heading getHeading() {
+        return heading;
     }
 
     public int getSegmentSize() {
