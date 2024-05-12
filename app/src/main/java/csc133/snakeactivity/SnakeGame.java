@@ -1,7 +1,7 @@
 package csc133.snakeactivity;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
+import android.content.*;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import android.content.SharedPreferences;
 import android.os.Handler;
 import android.app.Activity;
 import android.app.AlertDialog;
