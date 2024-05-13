@@ -312,6 +312,7 @@ class SnakeGame extends SurfaceView implements Runnable {
                         if (segmentsRemoved > 0) {
                             mScore -= segmentsRemoved;
                             mScore = Math.max(0, mScore);
+                            AudioContext.playSharkBiteSound();
                         }
                     }
                 }
@@ -502,7 +503,10 @@ class SnakeGame extends SurfaceView implements Runnable {
     private void drawPausedMessage() {
         if (mPaused && isGameStarted) {
             mPaint.setTextSize(250);
-            mCanvas.drawText("Paused", size.x / 4f, size.y / 2f, mPaint);
+            float textWidth = mPaint.measureText("Paused");
+            float x = (size.x - textWidth) / 2f; // Center horizontally
+            float y = size.y / 2f; // Center vertically
+            mCanvas.drawText("Paused", x, y, mPaint);
         }
     }
 
@@ -510,7 +514,11 @@ class SnakeGame extends SurfaceView implements Runnable {
     private void drawTapToPlayMessage() {
         if (!isGameStarted) {
             mPaint.setTextSize(250);
-            mCanvas.drawText(getResources().getString(R.string.tap_to_play), size.x / 4f, size.y / 2f, mPaint);
+            String tapToPlay = getResources().getString(R.string.tap_to_play);
+            float textWidth = mPaint.measureText(tapToPlay);
+            float x = (size.x - textWidth) / 2f; // Center horizontally
+            float y = size.y / 2f; // Center vertically
+            mCanvas.drawText(tapToPlay, x, y, mPaint);
         }
     }
 
