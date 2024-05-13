@@ -1,9 +1,12 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.SnakeActivity" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <!-- Base application theme -->
+    <style name="Base.Theme.SnakeActivity" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <!-- Customize your theme here -->
     </style>
 
     <style name="Theme.SnakeActivity" parent="Base.Theme.SnakeActivity" />
+
+    <style name="AppDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <!-- Customize your dialog theme here if needed -->
+    </style>
 </resources>

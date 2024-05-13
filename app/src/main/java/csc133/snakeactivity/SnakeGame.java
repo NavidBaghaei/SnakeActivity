@@ -2,23 +2,38 @@ package csc133.snakeactivity;
 import csc133.snakeactivity.PowerUpSnakeDecorator;
 
 import android.annotation.SuppressLint;
-import android.content.*;
+import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.*;
+import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.view.*;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.*;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.res.ResourcesCompat;
+
+import java.util.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import android.os.Handler;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.graphics.*;
-import android.view.*;
-import android.widget.*;
-import java.util.*;
-import android.graphics.drawable.Drawable;
+
+
 
 @SuppressLint("ViewConstructor")
 class SnakeGame extends SurfaceView implements Runnable {
@@ -174,6 +189,7 @@ class SnakeGame extends SurfaceView implements Runnable {
         SharedPreferences prefs = getContext().getSharedPreferences("SnakeGame", Context.MODE_PRIVATE);
         return prefs.getInt("highScore", 0);
     }
+
 
     // Method to initialize game objects and UI elements
     private void initializeGameObjects(Typeface customTypeface) {
@@ -626,21 +642,54 @@ class SnakeGame extends SurfaceView implements Runnable {
 
                     // Find views in custom layout
                     ImageView backgroundImageView = dialogView.findViewById(R.id.background_image_view);
+                    TextView highScoreTextView = dialogView.findViewById(R.id.high_score_text_view);
+                    TextView currentScoreTextView = dialogView.findViewById(R.id.current_score_text_view);
+                    EditText playerNameEditText = dialogView.findViewById(R.id.player_name_edit_text);
+                    ListView leaderboardListView = dialogView.findViewById(R.id.leaderboard_list_view);
                     Button restartButton = dialogView.findViewById(R.id.restart_button);
                     Button exitButton = dialogView.findViewById(R.id.exit_button);
 
                     // Set image on the background image view
                     backgroundImageView.setImageResource(R.drawable.game_over);
 
-                    AlertDialog.Builder builder = new AlertDialog.Builder(activityContext);
+                    // Set high score and current score
+                    int highScore = getHighScore();
+                    highScoreTextView.setText("High Score: " + highScore);
+
+                    int currentScore = mScore; // Assume you have a method to get the current score
+                    currentScoreTextView.setText("Score: " + currentScore);
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(activityContext, R.style.AppDialogTheme);
                     builder.setView(dialogView);
                     builder.setCancelable(false); // Prevent dismissing dialog by clicking outside
                     AlertDialog dialog = builder.create();
+
+                    // Set listener for Enter key in EditText
+                    playerNameEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+                        @Override
+                        public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                                String playerName = playerNameEditText.getText().toString();
+                                if (!playerName.isEmpty()) {
+                                    saveScore(playerName, currentScore);
+                                    updateLeaderboard(leaderboardListView); // Update leaderboard with new score
+                                    playerNameEditText.setVisibility(View.GONE); // Hide EditText
+                                }
+                                return true;
+                            }
+                            return false;
+                        }
+                    });
 
                     // Set click listeners for buttons
                     restartButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+                            String playerName = playerNameEditText.getText().toString();
+                            if (!playerName.isEmpty()) {
+                                saveScore(playerName, currentScore);
+                                updateLeaderboard(leaderboardListView); // Update leaderboard with new score
+                            }
                             dialog.dismiss(); // Dismiss dialog
                             startNewGame(); // Implement startNewGame() method to reset the game state
                         }
@@ -649,6 +698,11 @@ class SnakeGame extends SurfaceView implements Runnable {
                     exitButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+                            String playerName = playerNameEditText.getText().toString();
+                            if (!playerName.isEmpty()) {
+                                saveScore(playerName, currentScore);
+                                updateLeaderboard(leaderboardListView); // Update leaderboard with new score
+                            }
                             dialog.dismiss(); // Dismiss dialog
                             if (activityContext instanceof Activity) {
                                 ((Activity) activityContext).finish(); // Exit the game
@@ -656,23 +710,98 @@ class SnakeGame extends SurfaceView implements Runnable {
                         }
                     });
 
-                    // Ensure background image is square
-                    backgroundImageView.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            int size = Math.min(backgroundImageView.getWidth(), backgroundImageView.getHeight());
-                            ViewGroup.LayoutParams layoutParams = backgroundImageView.getLayoutParams();
-                            layoutParams.width = size;
-                            layoutParams.height = size;
-                            backgroundImageView.setLayoutParams(layoutParams);
-                        }
-                    });
+                    // Initialize leaderboard
+                    updateLeaderboard(leaderboardListView);
 
                     dialog.show();
                 }
             });
         }
     }
+
+    private void saveScore(String playerName, int score) {
+        SharedPreferences prefs = getContext().getSharedPreferences("leaderboard", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        // Retrieve all entries and add the new score
+        Map<String, ?> allEntries = prefs.getAll();
+        List<String> leaderboardData = new ArrayList<>();
+
+        for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
+            leaderboardData.add(entry.getValue().toString());
+        }
+
+        // Add the new score
+        leaderboardData.add(playerName + ":" + score);
+
+        // Sort the leaderboard data by score in descending order
+        Collections.sort(leaderboardData, new Comparator<String>() {
+            @Override
+            public int compare(String entry1, String entry2) {
+                int score1 = Integer.parseInt(entry1.split(":")[1]);
+                int score2 = Integer.parseInt(entry2.split(":")[1]);
+                return Integer.compare(score2, score1); // Descending order
+            }
+        });
+
+        // Keep only the top 3 scores
+        if (leaderboardData.size() > 3) {
+            leaderboardData = leaderboardData.subList(0, 3);
+        }
+
+        // Clear the existing entries
+        editor.clear();
+
+        // Save the top 3 scores back to SharedPreferences
+        for (int i = 0; i < leaderboardData.size(); i++) {
+            editor.putString("score_" + i, leaderboardData.get(i));
+        }
+
+        editor.apply();
+    }
+
+    private List<String> getLeaderboardData() {
+        SharedPreferences prefs = getContext().getSharedPreferences("leaderboard", Context.MODE_PRIVATE);
+        Map<String, ?> allEntries = prefs.getAll();
+        List<String> leaderboardData = new ArrayList<>();
+
+        for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
+            leaderboardData.add(entry.getValue().toString());
+        }
+
+        // Sort the leaderboard data by score in descending order (not strictly necessary, but ensures order)
+        Collections.sort(leaderboardData, new Comparator<String>() {
+            @Override
+            public int compare(String entry1, String entry2) {
+                int score1 = Integer.parseInt(entry1.split(":")[1]);
+                int score2 = Integer.parseInt(entry2.split(":")[1]);
+                return Integer.compare(score2, score1); // Descending order
+            }
+        });
+
+        return leaderboardData;
+    }
+
+    private void updateLeaderboard(ListView leaderboardListView) {
+        List<String> leaderboardData = getLeaderboardData(); // Retrieve leaderboard data
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, leaderboardData) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                // Set background color and text color for visibility
+                view.setBackgroundColor(getResources().getColor(android.R.color.black));
+                ((TextView) view).setTextColor(getResources().getColor(android.R.color.white));
+                return view;
+            }
+        };
+        leaderboardListView.setAdapter(adapter);
+    }
+
+
+
+
+
+
 
 
     // Method to schedule next bad apple spawn
