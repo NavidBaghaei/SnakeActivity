@@ -1,0 +1,106 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/menu_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:padding="16dp">
+
+    <!-- Background Image View -->
+    <ImageView
+        android:id="@+id/background_image_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        android:src="@drawable/game_over" />
+
+    <!-- High Score TextView -->
+    <TextView
+        android:id="@+id/high_score_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:padding="16dp"
+        android:gravity="center"
+        android:layout_below="@id/background_image_view"
+        android:layout_centerHorizontal="true"
+        android:text="High Score: 0" />
+
+    <!-- Current Score TextView -->
+    <TextView
+        android:id="@+id/current_score_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:padding="16dp"
+        android:gravity="center"
+        android:layout_below="@id/high_score_text_view"
+        android:layout_centerHorizontal="true"
+        android:text="Score: 0" />
+
+    <!-- Player Name EditText -->
+    <EditText
+        android:id="@+id/player_name_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter your name"
+        android:layout_below="@id/current_score_text_view"
+        android:layout_centerHorizontal="true"
+        android:padding="16dp"
+        android:textColor="@android:color/black"
+        android:background="@android:color/white"
+        android:inputType="text"
+        android:imeOptions="actionDone" />
+
+    <!-- Leaderboard Container -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_below="@id/player_name_edit_text"
+        android:layout_above="@id/buttons_layout"
+        android:background="@android:color/black">
+
+        <ListView
+            android:id="@+id/leaderboard_list_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:divider="@android:color/darker_gray"
+            android:dividerHeight="1dp"
+            android:background="@android:color/black" />
+    </ScrollView>
+
+    <!-- Buttons -->
+    <LinearLayout
+        android:id="@+id/buttons_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true">
+
+        <Button
+            android:id="@+id/restart_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Restart"
+            android:layout_margin="8dp"
+            android:background="@android:color/white"
+            android:textColor="@android:color/black" />
+
+        <Button
+            android:id="@+id/exit_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Exit"
+            android:layout_margin="8dp"
+            android:background="@android:color/white"
+            android:textColor="@android:color/black" />
+    </LinearLayout>
+
+</RelativeLayout>

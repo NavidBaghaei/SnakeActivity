@@ -67,6 +67,9 @@ public class SuperApple implements GameObject {
             if (currentTime - visibleStartTime > visibleDuration) {
                 isVisible = false;
                 isSpawned = false;
+                // Reset the location to an out-of-bounds position
+                location.x = -1; // Reset the x-coordinate (or any out-of-bounds value)
+                location.y = -1; // Reset the y-coordinate (or any out-of-bounds value)
             } else {
                 updateCounter++;
                 if (updateCounter >= updateFrequency) {
