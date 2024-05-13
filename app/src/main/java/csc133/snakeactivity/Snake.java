@@ -226,21 +226,6 @@ public class Snake extends MoveCollide implements GameObject, SpaceChecker, ISna
         }
     }
 
-    public Bitmap getHeadBitmapRight() {
-        return mBitmapHeadRight;
-    }
-
-    public Bitmap getHeadBitmapLeft() {
-        return mBitmapHeadLeft;
-    }
-
-    public Bitmap getHeadBitmapUp() {
-        return mBitmapHeadUp;
-    }
-
-    public Bitmap getHeadBitmapDown() {
-        return mBitmapHeadDown;
-    }
     @Override
     public boolean isOccupied(Point location) {
         for (Point segment : segmentLocations) {
