@@ -3,14 +3,13 @@ package csc133.snakeactivity;
 import android.graphics.*;
 import android.graphics.drawable.Drawable;
 import java.util.List;
-import csc133.snakeactivity.Snake; // Import the Heading enum from the Snake class
 
 public class PowerUpSnakeDecorator extends SnakeDecorator {
     private boolean powerUpActive;
     private long powerUpEndTime;
-    private Drawable headDrawable;
-    private Drawable bodyDrawable;
-    private int segmentSize;
+    private final Drawable headDrawable;
+    private final Drawable bodyDrawable;
+    private final int segmentSize;
 
     public PowerUpSnakeDecorator(ISnake snake, Drawable headDrawable, Drawable bodyDrawable, int segmentSize) {
         super(snake);
@@ -83,13 +82,13 @@ public class PowerUpSnakeDecorator extends SnakeDecorator {
                     break;
                 case DOWN:
                     canvas.save();
-                    canvas.rotate(180, left + segmentSize / 2, top + segmentSize / 2);
+                    canvas.rotate(180, left + (float) segmentSize / 2, top + (float) segmentSize / 2);
                     drawable.draw(canvas);
                     canvas.restore();
                     break;
                 case LEFT:
                     canvas.save();
-                    canvas.scale(-1, 1, left + segmentSize / 2, top + segmentSize / 2);
+                    canvas.scale(-1, 1, left + (float) segmentSize / 2, top + (float) segmentSize / 2);
                     drawable.draw(canvas);
                     canvas.restore();
                     break;
