@@ -9,6 +9,7 @@ import android.graphics.Point;
 import java.util.Random;
 import android.util.Log;
 
+// SuperApple class represents a special apple in the game
 public class SuperApple implements GameObject {
     private Point location = new Point();
     private Point velocity = new Point(1, 1); // Manageable velocity
@@ -27,6 +28,7 @@ public class SuperApple implements GameObject {
     private static boolean isSpawned;
     private static boolean isVisible;
 
+    // Constructor
     public SuperApple(Context context, Point spawnRange, int size, SpaceChecker spaceChecker) {
         mSpawnRange = spawnRange;
         mSize = size;
@@ -36,6 +38,7 @@ public class SuperApple implements GameObject {
         reset();
     }
 
+    // Method to spawn the super apple
     public void spawn() {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastSpawnTime >= initialSpawnDelay && !isSpawned) {
@@ -52,6 +55,7 @@ public class SuperApple implements GameObject {
         }
     }
 
+    // Method to draw the super apple
     @Override
     public void draw(Canvas canvas, Paint paint) {
         if (isVisible && isSpawned) {
@@ -59,6 +63,7 @@ public class SuperApple implements GameObject {
         }
     }
 
+    // Method to update the super apple
     @Override
     public void update() {
         if (isSpawned) {
@@ -93,12 +98,14 @@ public class SuperApple implements GameObject {
         }
     }
 
+    // Method to mark the super apple as eaten
     public void markAsEaten() {
         lastEatenTimestamp = System.currentTimeMillis();
         isSpawned = false;
         isVisible = false;
     }
 
+    // Method to reset the super apple
     public void reset() {
         isSpawned = false;
         isVisible = false;
@@ -106,16 +113,19 @@ public class SuperApple implements GameObject {
         lastEatenTimestamp = System.currentTimeMillis();
     }
 
+    // Method to handle game over
     public static void gameOver() {
         isSpawned = false;
         isVisible = false;
         Log.d("SuperApple", "Game Over: SuperApple is reset.");
     }
 
+    // Getter for the location of the super apple
     public Point getLocation() {
         return location;
     }
 
+    // Getter for the respawn delay of the super apple
     public long getRespawnDelay() {
         return respawnDelay;
     }

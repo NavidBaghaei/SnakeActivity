@@ -7,37 +7,42 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.view.MotionEvent;
 
+// SnakeDecorator class decorates a Snake object with additional functionality
 public class SnakeDecorator implements ISnake {
-    protected ISnake decoratedSnake;
-    private boolean powerUpActive = false;  // State to track whether the power-up is active
-    private long powerUpEndTime;  // Timestamp indicating when the power-up effect should expire
+    protected ISnake decoratedSnake; // Reference to the decorated snake
+    private boolean powerUpActive = false; // Flag to track whether the power-up is active
+    private long powerUpEndTime; // Timestamp indicating when the power-up effect should expire
 
+    // Constructor
     public SnakeDecorator(ISnake snake) {
         this.decoratedSnake = snake;
-        this.powerUpEndTime = 0;  // Initialize the power-up end time to 0
+        this.powerUpEndTime = 0; // Initialize the power-up end time to 0
     }
 
     // Method to activate or deactivate the power-up
     public void setPowerUpActive(boolean active, long duration) {
         this.powerUpActive = active;
         if (active) {
-            this.powerUpEndTime = System.currentTimeMillis() + duration;  // Set the end time of the power-up
+            this.powerUpEndTime = System.currentTimeMillis() + duration; // Set the end time of the power-up
         } else {
-            this.powerUpEndTime = 0;  // Reset the power-up end time
+            this.powerUpEndTime = 0; // Reset the power-up end time
         }
     }
 
+    // Method to draw the snake with power-up effect
     @Override
     public void draw(Canvas canvas, Paint paint) {
         if (powerUpActive && System.currentTimeMillis() < powerUpEndTime) {
             paint.setColor(Color.YELLOW); // Change the color when power-up is active
         }
-        decoratedSnake.draw(canvas, paint);
+        decoratedSnake.draw(canvas, paint); // Draw the decorated snake
         if (powerUpActive && System.currentTimeMillis() >= powerUpEndTime) {
             paint.setColor(Color.BLUE); // Reset the paint color back for other uses
-            powerUpActive = false;  // Reset the power-up state
+            powerUpActive = false; // Reset the power-up state
         }
     }
+
+    // Delegate other methods to the decorated snake
 
     @Override
     public void update() {
@@ -106,9 +111,10 @@ public class SnakeDecorator implements ISnake {
 
     @Override
     public void updateHeading(MoveCollide.Heading newHeading) {
-        decoratedSnake.updateHeading(newHeading);  // Delegate to the decorated snake
+        decoratedSnake.updateHeading(newHeading); // Delegate to the decorated snake
     }
 
+    // Method to get the decorated snake
     public ISnake getDecorated() {
         return decoratedSnake;
     }
