@@ -805,13 +805,6 @@ class SnakeGame extends SurfaceView implements Runnable {
         leaderboardListView.setAdapter(adapter);
     }
 
-
-
-
-
-
-
-
     // Method to schedule next bad apple spawn
     private void scheduleNextBadAppleSpawn() {
         if (!mPaused && mPlaying && !isSpawnScheduled) {
