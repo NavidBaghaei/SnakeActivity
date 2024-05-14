@@ -12,38 +12,55 @@ import android.graphics.Point;
 import java.util.Random;
 import android.os.Handler;
 
+// Class representing the shark object in the game
 class Shark implements GameObject {
+    // Position of the shark
     private PointF location = new PointF();
+    // Direction of the shark's movement
     private PointF direction = new PointF();
+    // Size of the shark
     private int mSize;
+    // Bitmap for the shark
     private Bitmap mBitmapShark;
+    // Flipped bitmap for the shark (for leftward movement)
     private Bitmap mFlippedBitmap;
+    // Flag indicating if the shark is moving
     private boolean isMoving = false;
-    private boolean spawnLeft = true; // Indicates the direction of spawn
+    // Flag indicating the direction of shark spawn
+    private boolean spawnLeft = true;
+    // Screen dimensions
     private float screenWidth, screenHeight;
+    // Time when the shark was last deactivated
     private long lastDeactivatedTime = System.currentTimeMillis();
+    // Delay before initial spawn
     private static final long INITIAL_DELAY = 10000;
+    // Delay before respawn after despawn
     private static final long RESPAWN_DELAY = 10000;
+    // Delay before respawn after despawn
+    private static final long DESPAWN_DELAY = 10000;
+    // Flag indicating if the first spawn has occurred
     private boolean firstSpawnDone = false;
+    // Random object for generating random values
     private Random random = new Random();
+    // Reference to the snake object
     private ISnake snake;
-    private static final long DESPAWN_DELAY = 10000; // Delay before respawn after despawn
 
-
-
-
+    // Constructor
     public Shark(Context context, int size, float screenWidth, float screenHeight, ISnake snake) {
         this.mSize = size;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         this.snake = snake;
+        // Load shark bitmap from resources and scale it to the specified size
         mBitmapShark = BitmapFactory.decodeResource(context.getResources(), R.drawable.shark);
         mBitmapShark = Bitmap.createScaledBitmap(mBitmapShark, size, size, false);
+        // Create a flipped bitmap for leftward movement
         Matrix matrix = new Matrix();
         matrix.preScale(-1, 1);
         mFlippedBitmap = Bitmap.createBitmap(mBitmapShark, 0, 0, mBitmapShark.getWidth(), mBitmapShark.getHeight(), matrix, false);
     }
 
+    // Update method to handle shark movement and respawn logic
     public void update() {
         long currentTime = System.currentTimeMillis();
 
@@ -58,9 +75,9 @@ class Shark implements GameObject {
             float nextX = location.x + direction.x * 40;
             if ((spawnLeft && nextX > screenWidth) || (!spawnLeft && nextX + mBitmapShark.getWidth() < 0)) {
                 isMoving = false;
-                AudioContext.stopSharkSwimSound();
+                AudioContext.stopSharkSwimSound(); // Stop shark audio
                 lastDeactivatedTime = currentTime;
-                reset();
+                reset(); // Reset the shark's state
             } else {
                 location.x = nextX;
             }
@@ -72,9 +89,10 @@ class Shark implements GameObject {
         }
     }
 
+    // Reset method to reset the shark's state
     public void reset() {
         isMoving = false;
-        AudioContext.stopSharkSwimSound(); //Stop shark audio
+        AudioContext.stopSharkSwimSound(); // Stop shark audio
         // Reset the shark's position to a valid position off-screen
         if (spawnLeft) {
             location.x = -mBitmapShark.getWidth();
@@ -86,7 +104,7 @@ class Shark implements GameObject {
         lastDeactivatedTime = System.currentTimeMillis(); // Reset lastDeactivatedTime
     }
 
-
+    // Spawn method to spawn the shark at a random position
     public void spawn() {
         float minY = 50; // Slightly away from the very top and bottom
         float maxY = screenHeight - mBitmapShark.getHeight() - 50;
@@ -101,11 +119,12 @@ class Shark implements GameObject {
         }
 
         location.set(x, y);
-        direction.set(spawnLeft ? 1 : -1, 0);
+        direction.set(spawnLeft ? 1 : -1, 0); // Set movement direction
         isMoving = true;
-        AudioContext.playSharkSwimSound();
+        AudioContext.playSharkSwimSound(); // Play shark swim sound
     }
 
+    // Method to check collision between the shark and the snake
     public boolean checkCollision(Snake snake) {
         if (!isMoving) {
             return false; // Do not check for collisions if the shark is not moving
@@ -127,16 +146,17 @@ class Shark implements GameObject {
                 snakeHead.y < sharkBottom && snakeHead.y + snakeSize > sharkTop);
     }
 
-
-
+    // Getter method for shark's location
     public PointF getLocation() {
         return new PointF(location.x, location.y);
     }
 
+    // Getter method for shark's bitmap
     public Bitmap getBitmap() {
         return mBitmapShark;
     }
 
+    // Method to draw the shark on the canvas
     public void draw(Canvas canvas, Paint paint) {
         Bitmap toDraw = mBitmapShark;
         if (!spawnLeft) {
@@ -149,5 +169,4 @@ class Shark implements GameObject {
             canvas.drawBitmap(toDraw, location.x, location.y, paint);
         }
     }
-
 }
