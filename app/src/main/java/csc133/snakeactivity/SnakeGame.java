@@ -312,6 +312,7 @@ class SnakeGame extends SurfaceView implements Runnable {
                         if (segmentsRemoved > 0) {
                             mScore -= segmentsRemoved;
                             mScore = Math.max(0, mScore);
+                            AudioContext.playSharkBiteSound();
                         }
                     }
                 }
